@@ -88,6 +88,7 @@
     :Class Frame ⍝ list of series of the same length
 
         :Field Public series←0⍴⎕NEW Series
+        :Field Public SHADE←3
 
         ∇ Make0
           :Access Public
@@ -120,12 +121,12 @@
 
         ⍝ set index function I and frame of each series
         ∇ setframe
-          :Implements Trigger series
+          :Implements Trigger series,SHADE
           :Access Public
           ⎕SIGNAL(~∧/series∊⎕INSTANCES ##.Series)/11 ⍝ domain
           ⎕SIGNAL(1<≢∪⍴∘⌷¨series.values)/6           ⍝ value
           I←series.label∘⍳{83≠⎕DR ⍵:⍺⍺⊂⍵ ⋄ ⍵}¨ ⍝ index function
-          ⎕DF⍕(1∘↑⍪'─'⍪2∘↓)⍕⍕¨⊢series
+          ⎕DF SHADE{0=⍺:⍵ ⋄ ↑'░'@(∊∘' ·')¨@((0=⍺|2-⍨⍳≢⍵)⍨)↓⍵}⍕(1∘↑⍪'─'⍪2∘↓)⍕⍕¨⊢series
         ∇
 
         ⍝ bracket indexing rank-1 [] to return series
@@ -168,7 +169,7 @@
         sets←{~⊃⌽ais⍵:series⊢←⍵.NewValue ⋄ series[ai⍵]←⍵.NewValue}
         aiv←{I⊃⍵.Indexers} ⋄ av←{↑[⎕IO]⍣(1<≢⍺)⊢⍵}
         getv←{~⊃ais⍵:⍺av⍺.values ⋄ ⍺av⍺{⍺.values[⍵]}¨⊂aiv⍵}
-        setv←{v←↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵.NewValue ⋄ ~⊃ais⍵:⍺.values←v ⋄ ⍺.(values[aiv⍵])←v}
+        setv←{v←{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}⍵.NewValue ⋄ ~⊃ais⍵:⍺.values←v ⋄ ⍺.(values[aiv⍵])←v}
 
         ⍝ return index of values
         :Property Keyed loc
@@ -194,7 +195,6 @@
             ∇ set arg
               ⎕SIGNAL(1<≢⍴arg.Indexers)4 ⍝ rank
               :Trap 3 4 5
-             
                   :If ⊃arg.IndexersSpecified
                       arg.Indexers←{⊃⍣(1=≢⍵)⊢⍵}⍤(⍸values≡¨⊂)¨⊃arg.Indexers
                       values←arg.(NewValue@Indexers)values
