@@ -88,6 +88,7 @@
     :Class Frame ⍝ list of series of the same length
 
         :Field Public series←0⍴⎕NEW Series
+        :Field Public MAXLINES←45
         :Field Public SHADE←3
 
         ∇ Make0
@@ -120,13 +121,15 @@
         ∇
 
         ⍝ set index function I and frame of each series
-        ∇ setframe
-          :Implements Trigger series,SHADE
+        ∇ setframe;f
+          :Implements Trigger series,SHADE,MAXLINES
           :Access Public
           ⎕SIGNAL(~∧/series∊⎕INSTANCES ##.Series)/11 ⍝ domain
           ⎕SIGNAL(1<≢∪⍴∘⌷¨series.values)/6           ⍝ value
           I←series.label∘⍳{83≠⎕DR ⍵:⍺⍺⊂⍵ ⋄ ⍵}¨ ⍝ index function
-          ⎕DF SHADE{0=⍺:⍵ ⋄ ↑'░'@(∊∘' ·')¨@((0=⍺|2-⍨⍳≢⍵)⍨)↓⍵}⍕(1∘↑⍪'─'⍪2∘↓)⍕⍕¨⊢series
+          f←⍕(1∘↑⍪'─'⍪2∘↓)⍕⍕¨⊢series
+          f←SHADE{0=⍺:⍵ ⋄ ↑'░'@(∊∘' ·')¨@((0=⍺|2-⍨⍳≢⍵)⍨)↓⍵}f
+          ⎕DF MAXLINES{↑(⊂⍕'...',n-2),⍨⍣(n>⍺)↓(⍺⌊n←≢⍵)↑⍵}⍣(MAXLINES>0)⊢f
         ∇
 
         ⍝ bracket indexing rank-1 [] to return series
