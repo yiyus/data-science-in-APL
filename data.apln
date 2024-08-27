@@ -134,32 +134,24 @@
         :Property Keyed Default default
         :Access Private
             ∇ r←get arg
-              :Trap 3 4 5
-                  :Select ≢arg.Indexers
-                  :Case 1
-                      r←gets arg
-                  :Case 2
-                      r←(gets arg)getv arg
-                  :Else
-                      ⎕SIGNAL 4
-                  :EndSelect
+              :Select ≢arg.Indexers
+              :Case 1
+                  r←gets arg
+              :Case 2
+                  r←(gets arg)getv arg
               :Else
-                  ⎕SIGNAL ⎕EN
-              :EndTrap
+                  ⎕SIGNAL 4
+              :EndSelect
             ∇
             ∇ set arg
-              :Trap 3 4 5
-                  :Select ≢arg.Indexers
-                  :Case 1
-                      sets arg
-                  :Case 2
-                      (gets arg)setv arg
-                  :Else
-                      ⎕SIGNAL 4
-                  :EndSelect
+              :Select ≢arg.Indexers
+              :Case 1
+                  sets arg
+              :Case 2
+                  (gets arg)setv arg
               :Else
-                  ⎕SIGNAL ⎕EN
-              :EndTrap
+                  ⎕SIGNAL 4
+              :EndSelect
             ∇
         :EndProperty
 
@@ -175,35 +167,27 @@
         :Property Keyed loc
         :Access Public
             ∇ r←get arg
-              :Trap 3 4 5
-                  :Select ≢arg.Indexers
-                  :Case 1
-                      :If ⊃arg.IndexersSpecified
-                          r←ai arg
-                      :Else
-                          r←⍳≢⊃values
-                      :EndIf
-                  :Case 2
-                      r←⎕←(gets arg).loc[⊃arg.Indexers]
+              :Select ≢arg.Indexers
+              :Case 1
+                  :If ⊃arg.IndexersSpecified
+                      r←ai arg
                   :Else
-                      ⎕SIGNAL 4 ⍝ rank
-                  :EndSelect
+                      r←⍳≢⊃values
+                  :EndIf
+              :Case 2
+                  r←⎕←(gets arg).loc[⊃arg.Indexers]
               :Else
-                  ⎕SIGNAL ⎕EN
-              :EndTrap
+                  ⎕SIGNAL 4 ⍝ rank
+              :EndSelect
             ∇
             ∇ set arg
               ⎕SIGNAL(1<≢⍴arg.Indexers)4 ⍝ rank
-              :Trap 3 4 5
-                  :If ⊃arg.IndexersSpecified
-                      arg.Indexers←{⊃⍣(1=≢⍵)⊢⍵}⍤(⍸values≡¨⊂)¨⊃arg.Indexers
-                      values←arg.(NewValue@Indexers)values
-                  :Else
-                      values←arg.NewValue
-                  :EndIf
+              :If ⊃arg.IndexersSpecified
+                  arg.Indexers←{⊃⍣(1=≢⍵)⊢⍵}⍤(⍸values≡¨⊂)¨⊃arg.Indexers
+                  values←arg.(NewValue@Indexers)values
               :Else
-                  ⎕SIGNAL ⎕EN
-              :EndTrap
+                  values←arg.NewValue
+              :EndIf
             ∇
         :EndProperty
 
@@ -229,7 +213,9 @@
 
     :EndClass ⍝ Frame
 
-    ∇ s←{l}series v ⍝ return series or list of series
+    ⍝ return series or list of series
+    ∇ s←{l}series v;⎕TRAP
+      ⎕TRAP←0 'C' '⎕SIGNAL⎕EN'
       ⎕SIGNAL(2<≢⍴v)/4 ⍝ rank
       :If 0≠⎕NC'l'
           ⎕SIGNAL(1<≢⍴v)/4 ⍝ rank
@@ -248,7 +234,9 @@
       :EndIf
     ∇
 
-    ∇ f←{l}frame v ⍝ return frame
+    ⍝ return frame
+    ∇ f←{l}frame v;⎕TRAP
+      ⎕TRAP←0 'C' '⎕SIGNAL⎕EN'
       :If 0≠⎕NC'l'
           :If 80=⎕DR v
               v←⎕CSV⍠'Invert' 2⊢v'' 4 0
@@ -261,36 +249,44 @@
       :EndIf
     ∇
 
-    sort←{ ⍝ sort right argument by left argument
-        ⍺←⍵ ⋄ a←⍺{0::⍺ ⋄ ⍵[⍺]}⍵
-        a←{4::{2::⍵ ⋄ ↑[⎕IO]⍣(1<≢⍵)⊢⍵.values}⍵ ⋄ ⍵[;]}a
-        a←(⊂⍺⍺ a)⌷[⎕IO]{4::⍵[] ⋄ ⍵[;]}⍵
-        a{2::⍺{2::⍺ ⋄ ⍵.series ⍺}⍵ ⋄ ⍵.frame ⍺}⍵
-    }
+    ⍝ sort right argument by left argument
+      sort←{
+          ⎕TRAP←0 'C' '⎕SIGNAL⎕EN'
+          ⍺←⍵ ⋄ a←⍺{0::⍺ ⋄ ⍵[⍺]}⍵
+          a←{4::{2::⍵ ⋄ ↑[⎕IO]⍣(1<≢⍵)⊢⍵.values}⍵ ⋄ ⍵[;]}a
+          a←(⊂⍺⍺ a)⌷[⎕IO]{4::⍵[] ⋄ ⍵[;]}⍵
+          a{2::⍺{2::⍺ ⋄ ⍵.series ⍺}⍵ ⋄ ⍵.frame ⍺}⍵
+      }
 
-    by←{ ⍝ group by right operand and apply left operand
-        ⍺←⊢ ⋄ v←frame⍣(~(⊂⍵)∊⎕INSTANCES Frame)⊢⍵
-        (k v)←{3 11::⍵ v ⋄ (,v[⍵])((v[])~(v[⍵]))}⍵⍵
-        l←{2::⍬ ⋄ (,⍵).label}k
-        (kv vv)←{0::{0::⍵ ⋄ (,⍵).values}⍵ ⋄ ⍵[].values}¨k v
-        vv←kv,∘⍺⍺⌸⍥(↑[⎕IO])vv
-        l←⍺{
-          0::⎕SIGNAL 6 ⋄ 0=⎕NC'⍺':l,v.label
-          (vl←⊃⌽⍴vv)=≢⍺:⍺ ⋄ vl=≢l,⍺:l,⍺ ⋄ l,v.label,⍺
-        }v
-        ⍋sort l frame vv
-    }
-    
-    where←{ ⍝ apply left operand where righ operand is fulfilled
-        V←{2::↓[⎕IO]⍵ ⋄ ⍵.values}
-        ⍺←⊢ ⋄ b←⍵⍵{3=⎕NC'⍺⍺':⍺⍺ ⍵ ⋄ ⍺⍺}V ⍺⊣⍵
-        ⍵{2 6::⍺{2::↑[⎕IO]⍵ ⋄ ⍺.series ⍵}⍵ ⋄ ⍺.frame ⍵}⍺⍺@((b⍨⍵)⍨)¨V ⍵
-    }
+    ⍝ group by right operand and apply left operand
+      by←{
+          ⎕TRAP←0 'C' '⎕SIGNAL⎕EN'
+          ⍺←⊢ ⋄ v←frame⍣(~(⊂⍵)∊⎕INSTANCES Frame)⊢⍵
+          (k v)←{3 11::⍵ v ⋄ (,v[⍵])((v[])~(v[⍵]))}⍵⍵
+          l←{2::⍬ ⋄ (,⍵).label}k
+          (kv vv)←{0::{0::⍵ ⋄ (,⍵).values}⍵ ⋄ ⍵[].values}¨k v
+          vv←kv,∘⍺⍺⌸⍥(↑[⎕IO])vv
+          l←⍺{
+              0::⎕SIGNAL 6 ⋄ 0=⎕NC'⍺':l,v.label
+              (vl←⊃⌽⍴vv)=≢⍺:⍺ ⋄ vl=≢l,⍺:l,⍺ ⋄ l,v.label,⍺
+          }v
+          ⍋sort l frame vv
+      }
 
-    join←{ ⍝ join frames or data arrays in a frame
-        (a w)←frame¨⍺ ⍵ ⋄ al←a.labels~l←a ⍵⍵⍥{⍵.labels}w
-        f←frame a[al],⍣(≢al)⊢w[l∩⍵.labels]
-        frame ⍺⍺{(⊂l←⊂⍵.label)∧.∊(f a w).labels:⍵.series a[;l]⍺⍺ ⍵[] ⋄ ⍵}¨f[]
-    }
+    ⍝ apply left operand where righ operand is fulfilled
+      where←{
+          ⎕TRAP←0 'C' '⎕SIGNAL⎕EN'
+          V←{2::↓[⎕IO]⍵ ⋄ ⍵.values}
+          ⍺←⊢ ⋄ b←⍵⍵{3=⎕NC'⍺⍺':⍺⍺ ⍵ ⋄ ⍺⍺}V ⍺⊣⍵
+          ⍵{2 6::⍺{2::↑[⎕IO]⍵ ⋄ ⍺.series ⍵}⍵ ⋄ ⍺.frame ⍵}⍺⍺@((b⍨⍵)⍨)¨V ⍵
+      }
+
+    ⍝ join frames or data arrays in a frame
+      join←{
+          ⎕TRAP←0 'C' '⎕SIGNAL⎕EN'
+          (a w)←frame¨⍺ ⍵ ⋄ al←a.labels~l←a ⍵⍵⍥{⍵.labels}w
+          f←frame a[al],⍣(≢al)⊢w[l∩⍵.labels]
+          frame ⍺⍺{(⊂l←⊂⍵.label)∧.∊(f a w).labels:⍵.series a[;l]⍺⍺ ⍵[] ⋄ ⍵}¨f[]
+      }
 
 :EndNamespace
