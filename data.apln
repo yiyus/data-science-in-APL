@@ -1,5 +1,8 @@
 :Namespace data
 
+    ⍝ data science for Dyalog APL
+    ⍝ PROOF-OF-CONCEPT jgl@dyalog.com 2024
+
     :Class Series ⍝ labelled list
 
         :Field Public label←''
