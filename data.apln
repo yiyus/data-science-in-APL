@@ -1,0 +1,293 @@
+:Namespace data
+
+    :Class Series ⍝ labelled list
+
+        :Field Public label←''
+        :Field Public values←⍬
+
+        ∇ Make0
+          :Access Public
+          :Implements Constructor
+        ∇
+
+        ⍝ l can be a Series, then its label is taken
+        ⍝ v can be a Series, then its values are taken
+        ∇ Make2(l v)
+          :Access Public
+          :Implements Constructor
+          label values←l v
+        ∇
+
+        ⍝ make new Series with same label
+        ∇ r←series v
+          :Access Public
+          r←label ##.series v
+        ∇
+
+        ⍝ frames that reference this series
+        :Property frames
+        :Access Public
+            ∇ r←get
+              r←⎕INSTANCES Frame
+              :If 0<≢r
+                  r←(⎕THIS∘∊¨r.series)/r
+              :EndIf
+            ∇
+        :EndProperty
+
+        ⍝ format in a column with its label as header
+        ⍝ repeated consecutive elements are replaced by a dot
+        ⍝ also perform checks
+        ∇ setseries
+          :Implements Trigger label,values
+          ⎕SIGNAL(1<≢⍴values)/4 ⍝ rank
+          ⎕DF ¯1↓[⎕IO+1]⍕1(↑⍪'─'⍪↓)⍕(⊂,label)⍪⍪'·'@(0,2≡⌿⊢),values
+          :If 0<≢f←frames
+              {⎕THIS∊⍵[]:⍵.setframe}¨frames ⍝ update referencing frames
+          :EndIf
+        ∇
+
+        ⍝ bracket indexing return values
+        :Property Default default
+        :Access Private
+            ∇ r←get
+              r←values
+            ∇
+            ∇ set arg
+              values←arg.NewValue
+            ∇
+        :EndProperty
+
+        ⍝ return index of values
+        :Property Keyed loc
+        :Access Public
+            ∇ r←get arg
+              ⎕SIGNAL(1<≢⍴arg.Indexers)
+              :If ⊃arg.IndexersSpecified
+                  r←{⊃⍣(1=≢⍵)⊢⍵}⍤(⍸values≡¨⊂)¨⊃arg.Indexers
+              :Else
+                  r←⍳≢values
+              :EndIf
+            ∇
+            ∇ set arg
+              ⎕SIGNAL(1<≢⍴arg.Indexers)
+              :If ⊃arg.IndexersSpecified
+                  arg.Indexers←{⊃⍣(1=≢⍵)⊢⍵}⍤(⍸values≡¨⊂)¨⊃arg.Indexers
+                  values←arg.(NewValue@Indexers)values
+              :Else
+                  values←arg.NewValue
+              :EndIf
+            ∇
+        :EndProperty
+
+    :EndClass ⍝ Series
+
+    :Class Frame ⍝ list of series of the same length
+
+        :Field Public series←0⍴⎕NEW Series
+
+        ∇ Make0
+          :Access Public
+          :Implements Constructor
+          series
+        ∇
+
+        ⍝ s can be an array with series, other frames or filenames
+        ⍝ values of elements arranged vertically are concatenated with ⍪
+        ⍝ series elements arranged horizontally are concatenated with ,
+        ∇ Make1(a)
+          :Access Public
+          :Implements Constructor
+          series←,a
+        ∇
+
+        ⍝ l can be a Frame or a list of Series
+        ⍝ v can be a Frame or a list of Series or a filename
+        ∇ Make2(l v)
+          :Access Public
+          :Implements Constructor
+          series←l ##.series¨v
+        ∇
+
+        ⍝ make new Frame with same labels
+        ∇ r←frame v
+          :Access Public
+          r←labels ##.frame v
+        ∇
+
+        ⍝ set index function I and frame of each series
+        ∇ setframe
+          :Implements Trigger series
+          :Access Public
+          ⎕SIGNAL(~∧/series∊⎕INSTANCES ##.Series)/11 ⍝ domain
+          ⎕SIGNAL(1<≢∪⍴∘⌷¨series.values)/6           ⍝ value
+          I←series.label∘⍳{83≠⎕DR ⍵:⍺⍺⊂⍵ ⋄ ⍵}¨ ⍝ index function
+          ⎕DF⍕(1∘↑⍪'─'⍪2∘↓)⍕⍕¨⊢series
+        ∇
+
+        ⍝ bracket indexing rank-1 [] to return series
+        ⍝ bracket indexing rank-2 [;] to return values
+        :Property Keyed Default default
+        :Access Private
+            ∇ r←get arg
+              :Trap 3 4 5
+                  :Select ≢arg.Indexers
+                  :Case 1
+                      r←gets arg
+                  :Case 2
+                      r←(gets arg)getv arg
+                  :Else
+                      ⎕SIGNAL 4
+                  :EndSelect
+              :Else
+                  ⎕SIGNAL ⎕EN
+              :EndTrap
+            ∇
+            ∇ set arg
+              :Trap 3 4 5
+                  :Select ≢arg.Indexers
+                  :Case 1
+                      sets arg
+                  :Case 2
+                      (gets arg)setv arg
+                  :Else
+                      ⎕SIGNAL 4
+                  :EndSelect
+              :Else
+                  ⎕SIGNAL ⎕EN
+              :EndTrap
+            ∇
+        :EndProperty
+
+        ⍝ helper fns to get/set series and values
+        ais←{⍵.IndexersSpecified} ⋄ ai←{I⊃⌽⍵.Indexers}
+        gets←{~⊃⌽ais⍵:series ⋄ series[ai⍵]}
+        sets←{~⊃⌽ais⍵:series⊢←⍵.NewValue ⋄ series[ai⍵]←⍵.NewValue}
+        aiv←{I⊃⍵.Indexers} ⋄ av←{↑[⎕IO]⍣(1<≢⍺)⊢⍵}
+        getv←{~⊃ais⍵:⍺av⍺.values ⋄ ⍺av⍺{⍺.values[⍵]}¨⊂aiv⍵}
+        setv←{v←↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵.NewValue ⋄ ~⊃ais⍵:⍺.values←v ⋄ ⍺.(values[aiv⍵])←v}
+
+        ⍝ return index of values
+        :Property Keyed loc
+        :Access Public
+            ∇ r←get arg
+              :Trap 3 4 5
+                  :Select ≢arg.Indexers
+                  :Case 1
+                      :If ⊃arg.IndexersSpecified
+                          r←ai arg
+                      :Else
+                          r←⍳≢⊃values
+                      :EndIf
+                  :Case 2
+                      r←⎕←(gets arg).loc[⊃arg.Indexers]
+                  :Else
+                      ⎕SIGNAL 4 ⍝ rank
+                  :EndSelect
+              :Else
+                  ⎕SIGNAL ⎕EN
+              :EndTrap
+            ∇
+            ∇ set arg
+              ⎕SIGNAL(1<≢⍴arg.Indexers)4 ⍝ rank
+              :Trap 3 4 5
+             
+                  :If ⊃arg.IndexersSpecified
+                      arg.Indexers←{⊃⍣(1=≢⍵)⊢⍵}⍤(⍸values≡¨⊂)¨⊃arg.Indexers
+                      values←arg.(NewValue@Indexers)values
+                  :Else
+                      values←arg.NewValue
+                  :EndIf
+              :Else
+                  ⎕SIGNAL ⎕EN
+              :EndTrap
+            ∇
+        :EndProperty
+
+        :Property labels ⍝ ←→ df[].label
+        :Access Public
+            ∇ r←get
+              r←series[].label
+            ∇
+            ∇ set arg
+              series[].label←arg.NewValue
+            ∇
+        :EndProperty
+
+        :Property values ⍝ ←→ df[].values
+        :Access Public
+            ∇ r←get
+              r←series[].values
+            ∇
+            ∇ set arg
+              series[].values←arg.NewValue
+            ∇
+        :EndProperty
+
+    :EndClass ⍝ Frame
+
+    ∇ s←{l}series v ⍝ return series or list of series
+      ⎕SIGNAL(2<≢⍴v)/4 ⍝ rank
+      :If 0≠⎕NC'l'
+          ⎕SIGNAL(1<≢⍴v)/4 ⍝ rank
+          s←⎕NEW Series(l v)
+      :ElseIf 2=≢⍴v
+          v←↑series¨↓v
+          v←{∨/2≢/⍵.label:⎕SIGNAL 6 ⋄ ⍵}¨↓[⎕IO]v
+          l←(⊃¨v).label ⋄ v←{⊃,/⍵[].values}¨v
+          s←l{⎕NEW Series(⍺ ⍵)}¨v
+      :ElseIf 80=⎕DR v
+          s←{(v l)←⍵ ⋄ l{⎕NEW Series(⍺ ⍵)}¨v}⎕CSV⍠2⊢v'' 4 1
+      :Else
+          v←⊃,/{2::⍵ ⋄ ⍵.series[]}¨v
+          ⎕SIGNAL(~∧/v∊⎕INSTANCES Series)/6 ⍝ value
+          s←{⎕NEW Series ⍵.(label values)}¨v
+      :EndIf
+    ∇
+
+    ∇ f←{l}frame v ⍝ return frame
+      :If 0≠⎕NC'l'
+          :If 80=⎕DR v
+              v←⎕CSV⍠'Invert' 2⊢v'' 4 0
+          :Else
+              v←↓[⎕IO]⍣(2=≢⍴v)⊢v
+          :EndIf
+          f←⎕NEW Frame(l v)
+      :Else
+          f←⎕NEW Frame(,⊂series v)
+      :EndIf
+    ∇
+
+    sort←{ ⍝ sort right argument by left argument
+        ⍺←⍵ ⋄ a←⍺{0::⍺ ⋄ ⍵[⍺]}⍵
+        a←{4::{2::⍵ ⋄ ↑[⎕IO]⍣(1<≢⍵)⊢⍵.values}⍵ ⋄ ⍵[;]}a
+        a←(⊂⍺⍺ a)⌷[⎕IO]{4::⍵[] ⋄ ⍵[;]}⍵
+        a{2::⍺{2::⍺ ⋄ ⍵.series ⍺}⍵ ⋄ ⍵.frame ⍺}⍵
+    }
+
+    by←{ ⍝ group by right operand and apply left operand
+        ⍺←⊢ ⋄ v←frame⍣(~(⊂⍵)∊⎕INSTANCES Frame)⊢⍵
+        (k v)←{3 11::⍵ v ⋄ (,v[⍵])((v[])~(v[⍵]))}⍵⍵
+        l←{2::⍬ ⋄ (,⍵).label}k
+        (kv vv)←{0::{0::⍵ ⋄ (,⍵).values}⍵ ⋄ ⍵[].values}¨k v
+        vv←kv,∘⍺⍺⌸⍥(↑[⎕IO])vv
+        l←⍺{
+          0::⎕SIGNAL 6 ⋄ 0=⎕NC'⍺':l,v.label
+          (vl←⊃⌽⍴vv)=≢⍺:⍺ ⋄ vl=≢l,⍺:l,⍺ ⋄ l,v.label,⍺
+        }v
+        ⍋sort l frame vv
+    }
+    
+    where←{ ⍝ apply left operand where righ operand is fulfilled
+        V←{2::↓[⎕IO]⍵ ⋄ ⍵.values}
+        ⍺←⊢ ⋄ b←⍵⍵{3=⎕NC'⍺⍺':⍺⍺ ⍵ ⋄ ⍺⍺}V ⍺⊣⍵
+        ⍵{2 6::⍺{2::↑[⎕IO]⍵ ⋄ ⍺.series ⍵}⍵ ⋄ ⍺.frame ⍵}⍺⍺@((b⍨⍵)⍨)¨V ⍵
+    }
+
+    join←{ ⍝ join frames or data arrays in a frame
+        (a w)←frame¨⍺ ⍵ ⋄ al←a.labels~l←a ⍵⍵⍥{⍵.labels}w
+        f←frame a[al],⍣(≢al)⊢w[l∩⍵.labels]
+        frame ⍺⍺{(⊂l←⊂⍵.label)∧.∊(f a w).labels:⍵.series a[;l]⍺⍺ ⍵[] ⋄ ⍵}¨f[]
+    }
+
+:EndNamespace
