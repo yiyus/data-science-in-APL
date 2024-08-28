@@ -2,6 +2,8 @@
 
     ⍝ data science for Dyalog APL
     ⍝ PROOF-OF-CONCEPT jgl@dyalog.com 2024
+    
+    debug←0
 
     :Class Series ⍝ labelled list
 
@@ -64,7 +66,8 @@
         ⍝ return index of values
         :Property Keyed loc
         :Access Public
-            ∇ r←get arg
+            ∇ r←get arg;⎕TRAP
+              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
               ⎕SIGNAL(1<≢⍴arg.Indexers)
               :If ⊃arg.IndexersSpecified
                   r←{⊃⍣(1=≢⍵)⊢⍵}⍤(⍸values≡¨⊂)¨⊃arg.Indexers
@@ -72,7 +75,8 @@
                   r←⍳≢values
               :EndIf
             ∇
-            ∇ set arg
+            ∇ set arg;⎕TRAP
+              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
               ⎕SIGNAL(1<≢⍴arg.Indexers)
               :If ⊃arg.IndexersSpecified
                   arg.Indexers←{⊃⍣(1=≢⍵)⊢⍵}⍤(⍸values≡¨⊂)¨⊃arg.Indexers
@@ -121,9 +125,10 @@
         ∇
 
         ⍝ set index function I and frame of each series
-        ∇ setframe;f
+        ∇ setframe;f;⎕TRAP
           :Implements Trigger series,SHADE,MAXLINES
           :Access Public
+          ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           ⎕SIGNAL(~∧/series∊⎕INSTANCES ##.Series)/11 ⍝ domain
           ⎕SIGNAL(1<≢∪⍴∘⌷¨series.values)/6           ⍝ value
           I←series.label∘⍳{83≠⎕DR ⍵:⍺⍺⊂⍵ ⋄ ⍵}¨ ⍝ index function
@@ -136,7 +141,8 @@
         ⍝ bracket indexing rank-2 [;] to return values
         :Property Keyed Default default
         :Access Private
-            ∇ r←get arg
+            ∇ r←get arg;⎕TRAP
+              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
               :Select ≢arg.Indexers
               :Case 1
                   r←gets arg
@@ -146,7 +152,8 @@
                   ⎕SIGNAL 4
               :EndSelect
             ∇
-            ∇ set arg
+            ∇ set arg;⎕TRAP
+              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
               :Select ≢arg.Indexers
               :Case 1
                   sets arg
@@ -169,7 +176,8 @@
         ⍝ return index of values
         :Property Keyed loc
         :Access Public
-            ∇ r←get arg
+            ∇ r←get arg;⎕TRAP
+              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
               :Select ≢arg.Indexers
               :Case 1
                   :If ⊃arg.IndexersSpecified
@@ -183,7 +191,8 @@
                   ⎕SIGNAL 4 ⍝ rank
               :EndSelect
             ∇
-            ∇ set arg
+            ∇ set arg;⎕TRAP
+              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
               ⎕SIGNAL(1<≢⍴arg.Indexers)4 ⍝ rank
               :If ⊃arg.IndexersSpecified
                   arg.Indexers←{⊃⍣(1=≢⍵)⊢⍵}⍤(⍸values≡¨⊂)¨⊃arg.Indexers
@@ -218,7 +227,7 @@
 
     ⍝ return series or list of series
     ∇ s←{l}series v;⎕TRAP
-      ⎕TRAP←0 'C' '⎕SIGNAL⎕EN'
+      ⎕TRAP←(~⎕THIS.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
       ⎕SIGNAL(2<≢⍴v)/4 ⍝ rank
       :If 0≠⎕NC'l'
           ⎕SIGNAL(1<≢⍴v)/4 ⍝ rank
@@ -239,7 +248,7 @@
 
     ⍝ return frame
     ∇ f←{l}frame v;⎕TRAP
-      ⎕TRAP←0 'C' '⎕SIGNAL⎕EN'
+      ⎕TRAP←(~⎕THIS.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
       :If 0≠⎕NC'l'
           :If 80=⎕DR v
               v←⎕CSV⍠'Invert' 2⊢v'' 4 0
@@ -254,7 +263,7 @@
 
     ⍝ sort right argument by left argument
       sort←{
-          ⎕TRAP←0 'C' '⎕SIGNAL⎕EN'
+          ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           ⍺←⍵ ⋄ a←⍺{0::⍺ ⋄ ⍵[⍺]}⍵
           a←{4::{2::⍵ ⋄ ↑[⎕IO]⍣(1<≢⍵)⊢⍵.values}⍵ ⋄ ⍵[;]}a
           a←(⊂⍺⍺ a)⌷[⎕IO]{4::⍵[] ⋄ ⍵[;]}⍵
@@ -263,7 +272,7 @@
 
     ⍝ group by right operand and apply left operand
       by←{
-          ⎕TRAP←0 'C' '⎕SIGNAL⎕EN'
+          ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           ⍺←⊢ ⋄ v←frame⍣(~(⊂⍵)∊⎕INSTANCES Frame)⊢⍵
           (k v)←{3 11::⍵ v ⋄ (,v[⍵])((v[])~(v[⍵]))}⍵⍵
           l←{2::⍬ ⋄ (,⍵).label}k
@@ -278,7 +287,7 @@
 
     ⍝ apply left operand where righ operand is fulfilled
       where←{
-          ⎕TRAP←0 'C' '⎕SIGNAL⎕EN'
+          ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           V←{2::↓[⎕IO]⍵ ⋄ ⍵.values}
           ⍺←⊢ ⋄ b←⍵⍵{3=⎕NC'⍺⍺':⍺⍺ ⍵ ⋄ ⍺⍺}V ⍺⊣⍵
           ⍵{2 6::⍺{2::↑[⎕IO]⍵ ⋄ ⍺.series ⍵}⍵ ⋄ ⍺.frame ⍵}⍺⍺@((b⍨⍵)⍨)¨V ⍵
@@ -286,7 +295,7 @@
 
     ⍝ join frames or data arrays in a frame
       join←{
-          ⎕TRAP←0 'C' '⎕SIGNAL⎕EN'
+          ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           (a w)←frame¨⍺ ⍵ ⋄ al←a.labels~l←a ⍵⍵⍥{⍵.labels}w
           f←frame a[al],⍣(≢al)⊢w[l∩⍵.labels]
           frame ⍺⍺{(⊂l←⊂⍵.label)∧.∊(f a w).labels:⍵.series a[;l]⍺⍺ ⍵[] ⋄ ⍵}¨f[]
