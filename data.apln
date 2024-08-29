@@ -3,7 +3,7 @@
     ⍝ data science for Dyalog APL
     ⍝ PROOF-OF-CONCEPT jgl@dyalog.com 2024
 
-    debug←0
+    debug←1
 
     :Class Series ⍝ labelled list
 
@@ -137,14 +137,22 @@
         ∇
 
         ⍝ set index function I and frame of each series
-        ∇ setframe arg;f;⎕TRAP
+        ∇ setframe arg;f;n;⎕TRAP
           :Implements Trigger series,SHADE,MAXLINES
           :Access Public
           ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           :If 'series'≡arg.Name
               ⎕SIGNAL(~∧/series∊⎕INSTANCES ##.Series)/11 ⍝ domain
               ⎕SIGNAL(1<≢∪⍴∘⌷¨series.values)/6           ⍝ value
-              names←{0=⍵.⎕NC'name':0(7162⌶)⍵.label ⋄ ⍵.name}¨series
+              f←0⍴⊂''
+              :For s :In series
+                n←{6::0(7162⌶)⍵.label ⋄ ⍵.name}s
+                :While (⊂n)∊f
+                  n←'_',n
+                :EndWhile
+                f,←s.name←⊂n
+              :EndFor
+              names←f
               I←series.label∘⍳{83≠⎕DR ⍵:⍺⍺⊂⍵ ⋄ ⍵}¨ ⍝ index function
           :EndIf
           f←⍕(1∘↑⍪'─'⍪2∘↓)⍕⍕¨⊢series
