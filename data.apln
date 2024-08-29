@@ -242,6 +242,7 @@
       ⎕SIGNAL(2<≢⍴v)/4 ⍝ rank
       :If 0≠⎕NC'l'
           ⎕SIGNAL(1<≢⍴v)/4 ⍝ rank
+          l←{0::⍵ ⋄ ⍵.label}l
           s←⎕NEW Series(l v)
       :ElseIf 2=≢⍴v
           v←↑series¨↓v
@@ -259,6 +260,7 @@
     ∇ f←{l}frame v;l2;⎕TRAP
       ⎕TRAP←(~⎕THIS.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
       :If 0≠⎕NC'l'
+          l←{0::⍵ ⋄ ⍵[].label}l
           v←{80=⎕DR ⍵:l csv ⍵ ⋄ ↓[⎕IO]⍣(2=≢⍴⍵)⊢⍵}v
           f←⎕NEW Frame(l v)
       :Else
@@ -310,8 +312,9 @@
       csv←{
           ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           0=⎕NC'⍺':frame{(v l)←⍵ ⋄ l{⎕NEW Series(⍺ ⍵)}¨v}⎕CSV⍠2⊢v'' 4 1
-          9=⎕NC'⍺':_←⍵⊣(⍺[].values)(⍺[].label)⎕CSV⍠2⍠'IfExists' 'Replace'⊢⍵
-          ({0::⍵ ⋄ ⍵[].label}⍺)frame⎕CSV⍠'Invert' 2⊢v'' 4 0
+          b←⍺{∧/(⊃∘⊃∘⎕CLASS¨⍺)∊Series Frame}⍣(⊃9=⎕NC'⍺')⊢0
+          b:_←⍵⊣(⍺[].values)(⍺[].label)⎕CSV⍠2⍠'IfExists' 'Replace'⊢⍵
+          ({0::⍵ ⋄ ⍵[].label}⍺)frame ⎕CSV⍠'Invert' 2⊢v'' 4 0
       }
 
 :EndNamespace
