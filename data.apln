@@ -2,7 +2,7 @@
 
     ⍝ data science for Dyalog APL
     ⍝ PROOF-OF-CONCEPT jgl@dyalog.com 2024
-    
+
     debug←0
 
     :Class Series ⍝ labelled list
@@ -94,6 +94,8 @@
         :Field Public series←0⍴⎕NEW Series
         :Field Public MAXLINES←45
         :Field Public SHADE←3
+        :Field Public names←0⍴⊂''
+        :Field Private named←0⍴⎕NEW Series
 
         ∇ Make0
           :Access Public
@@ -124,14 +126,27 @@
           r←labels ##.frame v
         ∇
 
+        ∇ setnames;⎕TRAP
+          :Implements Trigger names
+          ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+          ⎕SIGNAL(names≢⍥≢series)/5 ⍝ length
+          ⎕SIGNAL(names≢⍥⍴series)/4 ⍝ rank
+          _←{_←⎕EX⊃⍵.name}¨⍣(0<≢named)⊢named
+          {_←⎕FX('∇ r←',⍵⊃names)':Access Public'('r←series[',(⍕⍵),']')'∇'}¨⍳≢names
+          series.name←names ⋄ named←series
+        ∇
+
         ⍝ set index function I and frame of each series
-        ∇ setframe;f;⎕TRAP
+        ∇ setframe arg;f;⎕TRAP
           :Implements Trigger series,SHADE,MAXLINES
           :Access Public
           ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
-          ⎕SIGNAL(~∧/series∊⎕INSTANCES ##.Series)/11 ⍝ domain
-          ⎕SIGNAL(1<≢∪⍴∘⌷¨series.values)/6           ⍝ value
-          I←series.label∘⍳{83≠⎕DR ⍵:⍺⍺⊂⍵ ⋄ ⍵}¨ ⍝ index function
+          :If 'series'≡arg.Name
+              ⎕SIGNAL(~∧/series∊⎕INSTANCES ##.Series)/11 ⍝ domain
+              ⎕SIGNAL(1<≢∪⍴∘⌷¨series.values)/6           ⍝ value
+              names←{0=⍵.⎕NC'name':0(7162⌶)⍵.label ⋄ ⍵.name}¨series
+              I←series.label∘⍳{83≠⎕DR ⍵:⍺⍺⊂⍵ ⋄ ⍵}¨ ⍝ index function
+          :EndIf
           f←⍕(1∘↑⍪'─'⍪2∘↓)⍕⍕¨⊢series
           f←SHADE{0=⍺:⍵ ⋄ ↑'░'@(∊∘' ·')¨@((0=⍺|2-⍨⍳≢⍵)⍨)↓⍵}f
           ⎕DF MAXLINES{↑(⊂⍕'...',n-2),⍨⍣(n>⍺)↓(⍺⌊n←≢⍵)↑⍵}⍣(MAXLINES>0)⊢f
@@ -186,7 +201,7 @@
                       r←⍳≢⊃values
                   :EndIf
               :Case 2
-                  r←⎕←(gets arg).loc[⊃arg.Indexers]
+                  r←(gets arg).loc[⊃arg.Indexers]
               :Else
                   ⎕SIGNAL 4 ⍝ rank
               :EndSelect
