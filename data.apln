@@ -21,27 +21,17 @@
           label values←l v
         ∇
 
-        ⍝ frames that reference this series
-        :Property frames
-        :Access Public
-            ∇ r←get
-              r←⎕INSTANCES Frame
-              :If 0<≢r
-                  r←(⎕THIS∘∊¨r.series)/r
-              :EndIf
-            ∇
-        :EndProperty
-
         ⍝ format in a column with its label as header
         ⍝ repeated consecutive elements are replaced by a dot
         ⍝ also perform checks
-        ∇ setseries
+        ∇ setseries;f
           :Implements Trigger label,values
           ⎕SIGNAL(1<≢⍴values)/4 ⍝ rank
           ⎕DF ¯1↓[⎕IO+1]⍕1(↑⍪'─'⍪↓)⍕(⊂,label)⍪⍪'·'@(0,2≡⌿⊢),values
-          :If 0<≢f←frames
-              {⎕THIS∊⍵[]:⍵.SHADE←⍵.SHADE}¨frames ⍝ update frames
-          :EndIf
+          ⍝ update frames referencing this series
+          :For f :In ⎕INSTANCES Frame
+              {⎕THIS∊f.series:⍵.SHADE←⍵.SHADE}f
+          :EndFor
         ∇
 
         ⍝ bracket indexing return values
