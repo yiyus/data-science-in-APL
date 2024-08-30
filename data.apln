@@ -3,7 +3,7 @@
     ⍝ data science for Dyalog APL
     ⍝ PROOF-OF-CONCEPT jgl@dyalog.com 2024
 
-    debug←0
+    debug←1
 
     :Class Series ⍝ labelled list
 
@@ -120,10 +120,10 @@
         sets←{~⊃⌽ais⍵:series⊢←⍵.NewValue ⋄ series[ai⍵]←⍵.NewValue}
         aiv←{I⊃⍵.Indexers} ⋄ av←{↑[⎕IO]⍣(1<≢⍺)⊢⍵}
         getv←{~⊃ais⍵:⍺av⍺.values ⋄ ⍺av⍺{⍺.values[⍵]}¨⊂aiv⍵}
-        setv←{
-            ⎕←'v'(v←{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}⍵.NewValue)
-            ~⊃ais⍵:⍺.values←v ⋄ ⍺((aiv⍵){⍺.values[⍺⍺]←⍵})¨v
-        }
+          setv←{
+              v←{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}⍵.NewValue
+              ~⊃ais ⍵:⍺.values←v ⋄ ⍺((aiv ⍵){⍺.values[⍺⍺]←⍵})¨v
+          }
 
         :Property labels ⍝ ←→ df[].label
         :Access Public
@@ -178,7 +178,7 @@
               b←⍺{∧/(⊃∘⊃∘⎕CLASS¨⍺)∊Series Frame}⍣(⊃9=⎕NC'⍺')⊢0
               ~b:⎕CSV⍠2⊢v'' 4 0
               lv←⍺[].values(⍺[].label)
-              _←⍵⊣f⊢←lv⎕CSV⍠2⍠'IfExists' 'Replace'⊢⍵
+              _←⍵⊣f⊢←lv ⎕CSV⍠2⍠'IfExists' 'Replace'⊢⍵
           }v
           :If 0=⎕NC'f'
               f←⎕NEW Frame(({0::⍵ ⋄ ⍵[].label}l)v)
@@ -219,9 +219,14 @@
     ⍝ join frames or data arrays in a frame
       join←{
           ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
-          (a w)←frame¨⍺ ⍵ ⋄ al←a.labels~l←a ⍵⍵⍥{⍵.labels}w
+          ww←⍵⍵{⍺←⊢ ⋄ 3≠⎕NC'⍺⍺':⍺⍺ ⋄ ⍺ ⍺⍺ ⍵}⍥{⍵.labels}
+          0=⎕NC'⍺':⍺⍺{l frame⊆⍺⍺¨(⍵[l←ww ⍵]).values}⍵⍵⊢frame ⍵
+          (a w)←frame¨⍺ ⍵ ⋄ al←a.labels~l←a ww w
           f←frame a[al],⍣(≢al)⊢w[l∩⍵.labels]
-          frame ⍺⍺{(⊂l←⊂⍵.label)∧.∊(f a w).labels:⍵.label series a[;l]⍺⍺ ⍵[] ⋄ ⍵}¨f[]
+          frame ⍺⍺{
+              ~(⊂l←⊂⍵.label)∧.∊(f a w).labels:⍵
+              ⍵.label series a[;l]⍺⍺ ⍵[]
+          }¨f[]
       }
 
 :EndNamespace
