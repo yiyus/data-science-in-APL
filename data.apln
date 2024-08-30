@@ -3,7 +3,7 @@
     ⍝ data science for Dyalog APL
     ⍝ PROOF-OF-CONCEPT jgl@dyalog.com 2024
 
-    debug←1
+    debug←0
 
     :Class Series ⍝ labelled list
 
