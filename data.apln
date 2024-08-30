@@ -58,28 +58,11 @@
         :EndProperty
 
         ⍝ return index of values
-        :Property Keyed loc
+        ∇ r←indices v;⎕TRAP
         :Access Public
-            ∇ r←get arg;⎕TRAP
-              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
-              ⎕SIGNAL(1<≢⍴arg.Indexers)
-              :If ⊃arg.IndexersSpecified
-                  r←{⊃⍣(1=≢⍵)⊢⍵}⍤(⍸values≡¨⊂)¨⊃arg.Indexers
-              :Else
-                  r←⍳≢values
-              :EndIf
-            ∇
-            ∇ set arg;⎕TRAP
-              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
-              ⎕SIGNAL(1<≢⍴arg.Indexers)
-              :If ⊃arg.IndexersSpecified
-                  arg.Indexers←{⊃⍣(1=≢⍵)⊢⍵}⍤(⍸values≡¨⊂)¨⊃arg.Indexers
-                  values←arg.(NewValue@Indexers)values
-              :Else
-                  values←arg.NewValue
-              :EndIf
-            ∇
-        :EndProperty
+            ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+            r←{⊃⍣((,1)≡⍴⍵)⊢⍵}¨(⍸values≡¨⊂)¨v
+        ∇
 
     :EndClass ⍝ Series
 
@@ -164,34 +147,16 @@
         setv←{v←{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}⍵.NewValue ⋄ ~⊃ais⍵:⍺.values←v ⋄ ⍺.values[aiv⍵]←v}
 
         ⍝ return index of values
-        :Property Keyed loc
+        ∇ r←{l}indices v;⎕TRAP
         :Access Public
-            ∇ r←get arg;⎕TRAP
-              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
-              :Select ≢arg.Indexers
-              :Case 1
-                  :If ⊃arg.IndexersSpecified
-                      r←ai arg
-                  :Else
-                      r←⍳≢⊃values
-                  :EndIf
-              :Case 2
-                  r←(gets arg).loc[⊃arg.Indexers]
-              :Else
-                  ⎕SIGNAL 4 ⍝ rank
-              :EndSelect
-            ∇
-            ∇ set arg;⎕TRAP
-              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
-              ⎕SIGNAL(1<≢⍴arg.Indexers)4 ⍝ rank
-              :If ⊃arg.IndexersSpecified
-                  arg.Indexers←{⊃⍣(1=≢⍵)⊢⍵}⍤(⍸values≡¨⊂)¨⊃arg.Indexers
-                  values←arg.(NewValue@Indexers)values
-              :Else
-                  values←arg.NewValue
-              :EndIf
-            ∇
-        :EndProperty
+            ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+            :If 0=⎕NC'l'
+              r←{⊃⍣((,1)≡⍴⍵)⊢⍵}¨(⍸labels≡¨⊂)¨v
+            :Else
+              r←{⊃⍣((,1)≡⍴⍵)⊢⍵}¨(⍸labels≡¨⊂)¨l
+              r←(r⊃¨⊂series).indices v
+            :EndIf
+        ∇
 
         :Property labels ⍝ ←→ df[].label
         :Access Public
