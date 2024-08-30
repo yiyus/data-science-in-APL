@@ -42,7 +42,7 @@
           ⎕SIGNAL(1<≢⍴values)/4 ⍝ rank
           ⎕DF ¯1↓[⎕IO+1]⍕1(↑⍪'─'⍪↓)⍕(⊂,label)⍪⍪'·'@(0,2≡⌿⊢),values
           :If 0<≢f←frames
-              {⎕THIS∊⍵[]:⍵.setframe}¨frames ⍝ update referencing frames
+              {⎕THIS∊⍵[]:⍵.SHADE←⍵.SHADE}¨frames ⍝ update referencing frames
           :EndIf
         ∇
 
@@ -88,8 +88,6 @@
         :Field Public series←0⍴⎕NEW Series
         :Field Public MAXLINES←45
         :Field Public SHADE←3
-        :Field Public names←0⍴⊂''
-        :Field Private named←0⍴⎕NEW Series
 
         ∇ Make0
           :Access Public
@@ -114,33 +112,14 @@
           series←l ##.series¨v
         ∇
 
-        ∇ setnames;⎕TRAP
-          :Implements Trigger names
-          ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
-          ⎕SIGNAL(names≢⍥≢series)/5 ⍝ length
-          ⎕SIGNAL(names≢⍥⍴series)/4 ⍝ rank
-          _←{_←⎕EX⊃⍵.name}¨⍣(0<≢named)⊢named
-          {_←⎕FX('∇ r←',⍵⊃names)':Access Public'('r←series[',(⍕⍵),']')'∇'}¨⍳≢names
-          series.name←names ⋄ named←series
-        ∇
-
         ⍝ set index function I and frame of each series
-        ∇ setframe arg;f;n;⎕TRAP
+        ∇ setframe arg;f;⎕TRAP
           :Implements Trigger series,SHADE,MAXLINES
-          :Access Public
+          :Access Private
           ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           :If 'series'≡arg.Name
               ⎕SIGNAL(~∧/series∊⎕INSTANCES ##.Series)/11 ⍝ domain
               ⎕SIGNAL(1<≢∪⍴∘⌷¨series.values)/6           ⍝ value
-              f←0⍴⊂''
-              :For s :In series
-                  n←{6::0(7162⌶)⍵.label ⋄ ⍵.name}s
-                  :While (⊂n)∊f
-                      n←'_',n
-                  :EndWhile
-                  f,←s.name←⊂n
-              :EndFor
-              names←f
               I←series.label∘⍳{83≠⎕DR ⍵:⍺⍺⊂⍵ ⋄ ⍵}¨ ⍝ index function
           :EndIf
           f←⍕(1∘↑⍪'─'⍪2∘↓)⍕⍕¨⊢series
@@ -182,7 +161,7 @@
         sets←{~⊃⌽ais⍵:series⊢←⍵.NewValue ⋄ series[ai⍵]←⍵.NewValue}
         aiv←{I⊃⍵.Indexers} ⋄ av←{↑[⎕IO]⍣(1<≢⍺)⊢⍵}
         getv←{~⊃ais⍵:⍺av⍺.values ⋄ ⍺av⍺{⍺.values[⍵]}¨⊂aiv⍵}
-        setv←{v←{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}⍵.NewValue ⋄ ~⊃ais⍵:⍺.values←v ⋄ ⍺.(values[aiv⍵])←v}
+        setv←{v←{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}⍵.NewValue ⋄ ~⊃ais⍵:⍺.values←v ⋄ ⍺.values[aiv⍵]←v}
 
         ⍝ return index of values
         :Property Keyed loc
@@ -268,6 +247,15 @@
       :EndIf
     ∇
 
+    ⍝ write csv file
+      csv←{
+          ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+          0=⎕NC'⍺':frame{(v l)←⍵ ⋄ l{⎕NEW Series(⍺ ⍵)}¨v}⎕CSV⍠2⊢v'' 4 1
+          b←⍺{∧/(⊃∘⊃∘⎕CLASS¨⍺)∊Series Frame}⍣(⊃9=⎕NC'⍺')⊢0
+          b:_←⍵⊣(⍺[].values)(⍺[].label)⎕CSV⍠2⍠'IfExists' 'Replace'⊢⍵
+          ({0::⍵ ⋄ ⍵[].label}⍺)frame ⎕CSV⍠'Invert' 2⊢v'' 4 0
+      }
+
     ⍝ sort right argument by left argument
       sort←{
           ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
@@ -306,15 +294,6 @@
           (a w)←frame¨⍺ ⍵ ⋄ al←a.labels~l←a ⍵⍵⍥{⍵.labels}w
           f←frame a[al],⍣(≢al)⊢w[l∩⍵.labels]
           frame ⍺⍺{(⊂l←⊂⍵.label)∧.∊(f a w).labels:⍵.label series a[;l]⍺⍺ ⍵[] ⋄ ⍵}¨f[]
-      }
-
-    ⍝ write csv file
-      csv←{
-          ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
-          0=⎕NC'⍺':frame{(v l)←⍵ ⋄ l{⎕NEW Series(⍺ ⍵)}¨v}⎕CSV⍠2⊢v'' 4 1
-          b←⍺{∧/(⊃∘⊃∘⎕CLASS¨⍺)∊Series Frame}⍣(⊃9=⎕NC'⍺')⊢0
-          b:_←⍵⊣(⍺[].values)(⍺[].label)⎕CSV⍠2⍠'IfExists' 'Replace'⊢⍵
-          ({0::⍵ ⋄ ⍵[].label}⍺)frame ⎕CSV⍠'Invert' 2⊢v'' 4 0
       }
 
 :EndNamespace
