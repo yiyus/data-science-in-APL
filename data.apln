@@ -3,7 +3,7 @@
     ⍝ data science for Dyalog APL
     ⍝ PROOF-OF-CONCEPT jgl@dyalog.com 2024
 
-    debug←1
+    debug←0
 
     :Class Series ⍝ labelled list
 
@@ -27,7 +27,7 @@
         ∇ setseries;f
           :Implements Trigger label,values
           ⎕SIGNAL(1<≢⍴values)/4 ⍝ rank
-          ⎕DF ¯1↓[⎕IO+1]⍕1(↑⍪'─'⍪↓)⍕(⊂,label)⍪⍪'·'@(0,2≡⌿⊢),values
+          ⎕DF ¯1↓[⎕IO+1]⍕1(↑⍪'─'⍪↓)⍕(⊂,label)⍪⍪,values
           ⍝ update frames referencing this series
           :For f :In ⎕INSTANCES Frame
               {⎕THIS∊f.series:⍵.SHADE←⍵.SHADE}f
@@ -81,8 +81,8 @@
               ⎕SIGNAL(1<≢∪⍴∘⌷¨series.values)/6           ⍝ value
               I←series.label∘⍳{83≠⎕DR ⍵:⍺⍺⊂⍵ ⋄ ⍵}¨ ⍝ index function
           :EndIf
-          f←⍕(1∘↑⍪'─'⍪2∘↓)⍕⍕¨⊢series
-          f←SHADE{0=⍺:⍵ ⋄ ↑'░'@(∊∘' ·')¨@((0=⍺|2-⍨⍳≢⍵)⍨)↓⍵}f
+          f←1(↑⍪'─'⍪↓)⍕labels⍪⍉' '@(0,2≡/⊢)⍤1⍉default[;]
+          f←SHADE{0=⍺:⍵ ⋄ ↑'░'@(=∘' ')¨@((0=⍺|2-⍨⍳≢⍵)⍨)↓⍵}f
           ⎕DF MAXLINES{↑(⊂⍕n-2),⍨⍣(n>⍺)↓(⍺⌊n←≢⍵)↑⍵}⍣(MAXLINES>0)⊢f
         ∇
 
@@ -118,10 +118,10 @@
         ais←{⍵.IndexersSpecified} ⋄ ai←{I⊃⌽⍵.Indexers}
         gets←{~⊃⌽ais⍵:series ⋄ series[ai⍵]}
         sets←{~⊃⌽ais⍵:series⊢←⍵.NewValue ⋄ series[ai⍵]←⍵.NewValue}
-        aiv←{I⊃⍵.Indexers} ⋄ av←{↑[⎕IO]⍣(1<≢⍺)⊢⍵}
+        aiv←{I⊃⍵.Indexers} ⋄ av←{↑[⎕IO]⍣(0<≢⍴⍺)⊢⍵}
         getv←{~⊃ais⍵:⍺av⍺.values ⋄ ⍺av⍺{⍺.values[⍵]}¨⊂aiv⍵}
           setv←{
-              v←{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}⍵.NewValue
+              v←{↓[⎕IO]⍣(0<≢⍴⍵)⊢⍵}⍵.NewValue
               ~⊃ais ⍵:⍺.values←v ⋄ ⍺((aiv ⍵){⍺.values[⍺⍺]←⍵})¨v
           }
 
@@ -173,7 +173,7 @@
     ∇ f←{l}frame v;⎕TRAP
       ⎕TRAP←(~⎕THIS.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
       :If 0≠⎕NC'l'
-          v←{
+          v←l{
               80≠⎕DR ⍵:↓[⎕IO]⍣(2=≢⍴⍵)⊢⍵
               b←⍺{∧/(⊃∘⊃∘⎕CLASS¨⍺)∊Series Frame}⍣(⊃9=⎕NC'⍺')⊢0
               ~b:⎕CSV⍠2⊢v'' 4 0
@@ -220,7 +220,7 @@
       join←{
           ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           ww←⍵⍵{⍺←⊢ ⋄ 3≠⎕NC'⍺⍺':⍺⍺ ⋄ ⍺ ⍺⍺ ⍵}⍥{⍵.labels}
-          0=⎕NC'⍺':⍺⍺{l frame⊆⍺⍺¨(⍵[l←ww ⍵]).values}⍵⍵⊢frame ⍵
+          0=⎕NC'⍺':⍺⍺{(ww ⍵)frame⊆⍺⍺¨⍵.values}⍵⍵⊢frame ⍵
           (a w)←frame¨⍺ ⍵ ⋄ al←a.labels~l←a ww w
           f←frame a[al],⍣(≢al)⊢w[l∩⍵.labels]
           frame ⍺⍺{
