@@ -15,8 +15,6 @@
           :Implements Constructor
         ∇
 
-        ⍝ l can be a Series, then its label is taken
-        ⍝ v can be a Series, then its values are taken
         ∇ Make2(l v)
           :Access Public
           :Implements Constructor
@@ -42,7 +40,7 @@
           ⎕SIGNAL(1<≢⍴values)/4 ⍝ rank
           ⎕DF ¯1↓[⎕IO+1]⍕1(↑⍪'─'⍪↓)⍕(⊂,label)⍪⍪'·'@(0,2≡⌿⊢),values
           :If 0<≢f←frames
-              {⎕THIS∊⍵[]:⍵.SHADE←⍵.SHADE}¨frames ⍝ update referencing frames
+              {⎕THIS∊⍵[]:⍵.SHADE←⍵.SHADE}¨frames ⍝ update frames
           :EndIf
         ∇
 
@@ -56,13 +54,6 @@
               values←arg.NewValue
             ∇
         :EndProperty
-
-        ⍝ return index of values
-        ∇ r←indices v;⎕TRAP
-        :Access Public
-            ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
-            r←{⊃⍣((,1)≡⍴⍵)⊢⍵}¨(⍸values≡¨⊂)¨v
-        ∇
 
     :EndClass ⍝ Series
 
@@ -78,17 +69,12 @@
           series
         ∇
 
-        ⍝ s can be an array with series, other frames or filenames
-        ⍝ values of elements arranged vertically are concatenated with ⍪
-        ⍝ series elements arranged horizontally are concatenated with ,
         ∇ Make1(a)
           :Access Public
           :Implements Constructor
           series←,a
         ∇
 
-        ⍝ l can be a Frame or a list of Series
-        ⍝ v can be a Frame or a list of Series or a filename
         ∇ Make2(l v)
           :Access Public
           :Implements Constructor
@@ -107,7 +93,7 @@
           :EndIf
           f←⍕(1∘↑⍪'─'⍪2∘↓)⍕⍕¨⊢series
           f←SHADE{0=⍺:⍵ ⋄ ↑'░'@(∊∘' ·')¨@((0=⍺|2-⍨⍳≢⍵)⍨)↓⍵}f
-          ⎕DF MAXLINES{↑(⊂⍕'...',n-2),⍨⍣(n>⍺)↓(⍺⌊n←≢⍵)↑⍵}⍣(MAXLINES>0)⊢f
+          ⎕DF MAXLINES{↑(⊂⍕n-2),⍨⍣(n>⍺)↓(⍺⌊n←≢⍵)↑⍵}⍣(MAXLINES>0)⊢f
         ∇
 
         ⍝ bracket indexing rank-1 [] to return series
@@ -144,19 +130,10 @@
         sets←{~⊃⌽ais⍵:series⊢←⍵.NewValue ⋄ series[ai⍵]←⍵.NewValue}
         aiv←{I⊃⍵.Indexers} ⋄ av←{↑[⎕IO]⍣(1<≢⍺)⊢⍵}
         getv←{~⊃ais⍵:⍺av⍺.values ⋄ ⍺av⍺{⍺.values[⍵]}¨⊂aiv⍵}
-        setv←{v←{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}⍵.NewValue ⋄ ~⊃ais⍵:⍺.values←v ⋄ ⍺.values[aiv⍵]←v}
-
-        ⍝ return index of values
-        ∇ r←{l}indices v;⎕TRAP
-        :Access Public
-            ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
-            :If 0=⎕NC'l'
-              r←{⊃⍣((,1)≡⍴⍵)⊢⍵}¨(⍸labels≡¨⊂)¨v
-            :Else
-              r←{⊃⍣((,1)≡⍴⍵)⊢⍵}¨(⍸labels≡¨⊂)¨l
-              r←(r⊃¨⊂series).indices v
-            :EndIf
-        ∇
+        setv←{
+            ⎕←'v'(v←{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}⍵.NewValue)
+            ~⊃ais⍵:⍺.values←v ⋄ ⍺((aiv⍵){⍺.values[⍺⍺]←⍵})¨v
+        }
 
         :Property labels ⍝ ←→ df[].label
         :Access Public
@@ -181,6 +158,8 @@
     :EndClass ⍝ Frame
 
     ⍝ return series or list of series
+    ⍝ horizontal: concatenate series with ,
+    ⍝ vertical: concatenate values with ⍪
     ∇ s←{l}series v;⎕TRAP
       ⎕TRAP←(~⎕THIS.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
       ⎕SIGNAL(2<≢⍴v)/4 ⍝ rank
@@ -200,15 +179,16 @@
       :EndIf
     ∇
 
-    ⍝ return frame
+    ⍝ return frame from input to series or csv filename
     ∇ f←{l}frame v;⎕TRAP
       ⎕TRAP←(~⎕THIS.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
       :If 0≠⎕NC'l'
           v←{
               80≠⎕DR ⍵:↓[⎕IO]⍣(2=≢⍴⍵)⊢⍵
               b←⍺{∧/(⊃∘⊃∘⎕CLASS¨⍺)∊Series Frame}⍣(⊃9=⎕NC'⍺')⊢0
-              b:_←⍵⊣f⊢←⍺[].values(⍺[].label)⎕CSV⍠2⍠'IfExists' 'Replace'⊢⍵
-              ⎕CSV⍠2⊢v'' 4 0
+              ~b:⎕CSV⍠2⊢v'' 4 0
+              lv←⍺[].values(⍺[].label)
+              _←⍵⊣f⊢←lv⎕CSV⍠2⍠'IfExists' 'Replace'⊢⍵
           }v
           :If 0=⎕NC'f'
               f←⎕NEW Frame(({0::⍵ ⋄ ⍵[].label}l)v)
@@ -244,14 +224,6 @@
               (vl←⊃⌽⍴vv)=≢⍺:⍺ ⋄ vl=≢l,⍺:l,⍺ ⋄ l,v.label,⍺
           }v
           ⍋sort l frame vv
-      }
-
-    ⍝ apply left operand where righ operand is fulfilled
-      where←{
-          ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
-          V←{2::↓[⎕IO]⍵ ⋄ ⍵.values}
-          ⍺←⊢ ⋄ b←⍵⍵{3=⎕NC'⍺⍺':⍺⍺ ⍵ ⋄ ⍺⍺}V ⍺⊣⍵
-          ⍵{2 6::⍺{2::↑[⎕IO]⍵ ⋄ ⍺.series ⍵}⍵ ⋄ ⍺.frame ⍵}⍺⍺@((b⍨⍵)⍨)¨V ⍵
       }
 
     ⍝ join frames or data arrays in a frame
