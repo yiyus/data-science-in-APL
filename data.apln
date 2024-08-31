@@ -128,13 +128,13 @@
             ∇
         :EndProperty
 
-        :Property values ⍝ ←→ df[].values
+        :Property values ⍝ ←→ df[;]
         :Access Public
             ∇ r←get
-              r←series[].values
+              r←{↑[⎕IO]⍣(0<≢⍴⍵)⊢⍵.values}series
             ∇
             ∇ set arg
-              series[].values←arg.NewValue
+              series[].values←{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}arg.NewValue
             ∇
         :EndProperty
 
@@ -191,7 +191,7 @@
       sort←{
           ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           ⍺←⍵ ⋄ a←⍺{0::⍺ ⋄ ⍵[⍺]}⍵
-          a←{4::{2::⍵ ⋄ ↑[⎕IO]⍣(1<≢⍵)⊢⍵.values}⍵ ⋄ ⍵[;]}a
+          a←{4::{2::⍵ ⋄ ⍵.values}⍵ ⋄ ⍵[;]}a
           a←(⊂⍺⍺ a)⌷[⎕IO]{4::⍵[] ⋄ ⍵[;]}⍵
           a{2::⍵ ⋄ 6::⍵.label series ⍺ ⋄ ⍵.labels frame ⍺}⍵
       }
