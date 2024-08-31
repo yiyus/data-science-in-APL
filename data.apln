@@ -30,7 +30,7 @@
           ⎕DF ¯1↓[⎕IO+1]⍕1(↑⍪'─'⍪↓)⍕(⊂,label)⍪⍪,values
           ⍝ update frames referencing this series
           :For f :In ⎕INSTANCES Frame
-              {⎕THIS∊f.series:⍵.SHADE←⍵.SHADE}f
+            {⎕THIS∊f.series:⍵.SHADE←⍵.SHADE}f
           :EndFor
         ∇
 
@@ -183,6 +183,7 @@
           :If 0=⎕NC'f'
               f←⎕NEW Frame(({0::⍵ ⋄ ⍵[].label}l)v)
           :EndIf
+          v←l{0::⍬ ⋄ ⍵.(SHADE MAXLINES)←l.(SHADE MAXLINES)}f
       :Else
           v←{
               80≠⎕DR ⍵:series ⍵
