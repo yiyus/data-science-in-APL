@@ -5,6 +5,9 @@
 
     debug←0
 
+    MAXLINES←45
+    SHADE←3
+
     :Class Series ⍝ labelled list
 
         :Field Public label←''
@@ -50,25 +53,15 @@
     :Class Frame ⍝ list of series of the same length
 
         :Field Public series←0⍴⎕NEW Series
-        :Field Public MAXLINES←45
-        :Field Public SHADE←3
+        :Field Public MAXLINES←##.MAXLINES
+        :Field Public SHADE←##.SHADE
 
-        ∇ Make0
+        ∇ Make1 a
           :Access Public
           :Implements Constructor
-          series
-        ∇
-
-        ∇ Make1(a)
-          :Access Public
-          :Implements Constructor
+          ⎕SIGNAL(1<≢⍴a)/4 ⍝ rank
           series←,a
-        ∇
-
-        ∇ Make2(l v)
-          :Access Public
-          :Implements Constructor
-          series←l ##.series¨v
+          MAXLINES SHADE←##.(MAXLINES SHADE)
         ∇
 
         ⍝ set index function I and frame of each series
@@ -181,15 +174,16 @@
               _←⍵⊣f⊢←lv ⎕CSV⍠2⍠'IfExists' 'Replace'⊢⍵
           }v
           :If 0=⎕NC'f'
-              f←⎕NEW Frame(({0::⍵ ⋄ ⍵[].label}l)v)
+              f←({0::⍵ ⋄ ⍵[].label}l){⎕NEW Series(⍺ ⍵)}¨v
+              f←⎕NEW Frame f
+              v←{0::⍬ ⋄ ⍵.(SHADE MAXLINES)←l.(SHADE MAXLINES)}f
           :EndIf
-          v←l{0::⍬ ⋄ ⍵.(SHADE MAXLINES)←l.(SHADE MAXLINES)}f
       :Else
           v←{
               80≠⎕DR ⍵:series ⍵
               {(v l)←⍵ ⋄ l{⎕NEW Series(⍺ ⍵)}¨v}⎕CSV⍠2⊢⍵'' 4 1
           }v
-          f←⎕NEW Frame(,⊂v)
+          f←⎕NEW Frame v
       :EndIf
     ∇
 
@@ -221,7 +215,7 @@
       join←{
           ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           ww←⍵⍵{⍺←⊢ ⋄ 3≠⎕NC'⍺⍺':⍺⍺ ⋄ ⍺ ⍺⍺ ⍵}⍥{⍵.labels}
-          0=⎕NC'⍺':⍺⍺{(ww ⍵)frame⊆⍺⍺¨⍵.values}⍵⍵⊢frame ⍵
+          0=⎕NC'⍺':⍺⍺{(ww ⍵)frame ⍺⍺ ⍵.values}⍵⍵⊢frame ⍵
           (a w)←frame¨⍺ ⍵ ⋄ al←a.labels~l←a ww w
           f←frame a[al],⍣(≢al)⊢w[l∩⍵.labels]
           frame ⍺⍺{
