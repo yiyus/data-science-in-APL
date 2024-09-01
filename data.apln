@@ -33,7 +33,7 @@
           ⎕DF ¯1↓[⎕IO+1]⍕1(↑⍪'─'⍪↓)⍕(⊂,label)⍪⍪,values
           ⍝ update frames referencing this series
           :For f :In ⎕INSTANCES Frame
-            {⎕THIS∊f.series:⍵.SHADE←⍵.SHADE}f
+              {⎕THIS∊f.series:⍵.SHADE←⍵.SHADE}f
           :EndFor
         ∇
 
@@ -199,8 +199,19 @@
     ⍝ group by right operand and apply left operand
       by←{
           ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+          unstack←{
+              s←⍵[]~a b←⍺⍺ ⍵⍵{0::⍺ ⋄ ⍵[⊂⍺]}¨⊂⍵
+              r←≢y←∪↑[⎕IO]s.values
+              c←≢x←{⍵[⍋⍵]}∪b.values
+              f←frame s,b a
+              f←f frame((↑,y∘.,⊂¨x),⍤1⊢⍬⍨¨a)⍪f.values
+              f←f.labels,⌿by(f[(s,b).label])⊢f[a.label]
+              ⍺←⊢ ⋄ l←{0::⍵ ⋄ ⍵[].label}⍺⊣s.label,x
+              l frame y,r c⍴f[;a.label]
+          }
           ⍺←⊢ ⋄ v←frame⍣(~(⊂⍵)∊⎕INSTANCES Frame)⊢⍵
           (k v)←{3 11::⍵ v ⋄ (,v[⍵])((v[])~(v[⍵]))}⍵⍵
+          3≠⎕NC'⍺⍺':⍺(⍺⍺ unstack ⍵⍵)⍵
           l←{2::⍬ ⋄ (,⍵).label}k
           (kv vv)←{0::{0::⍵ ⋄ (,⍵).values}⍵ ⋄ ⍵[].values}¨k v
           vv←⊃⍪/⊂⍤2⊢kv{⍺,⍤1⊢⍵}∘⍺⍺⌸⍥(↑[⎕IO])vv
@@ -215,7 +226,7 @@
       join←{
           ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           ww←⍵⍵{⍺←⊢ ⋄ 3≠⎕NC'⍺⍺':⍺⍺ ⋄ ⍺ ⍺⍺ ⍵}⍥{⍵.labels}
-          0=⎕NC'⍺':⍺⍺{(ww ⍵)frame ⍺⍺ ⍵.values}⍵⍵⊢frame ⍵
+          0=⎕NC'⍺':(ww f)series ⍺⍺(f←frame ⍵).values
           (a w)←frame¨⍺ ⍵ ⋄ al←a.labels~l←a ww w
           f←frame a[al],⍣(≢al)⊢w[l∩⍵.labels]
           frame ⍺⍺{
