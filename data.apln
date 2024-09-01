@@ -76,7 +76,7 @@
           :EndIf
           f←1(↑⍪'─'⍪↓)⍕labels⍪⍉' '@(0,2≡/⊢)⍤1⍉default[;]
           f←SHADE{0=⍺:⍵ ⋄ ↑'░'@(=∘' ')¨@((0=⍺|2-⍨⍳≢⍵)⍨)↓⍵}f
-          ⎕DF MAXLINES{↑(⊂⍕n-2),⍨⍣(n>⍺)↓(⍺⌊n←≢⍵)↑⍵}⍣(MAXLINES>0)⊢f
+          ⎕DF MAXLINES{↑(⊂'…',⍕n-2),⍨⍣(n>⍺)↓(⍺⌊n←≢⍵)↑⍵}⍣(MAXLINES>0)⊢f
         ∇
 
         ⍝ bracket indexing rank-1 [] to return series
@@ -203,7 +203,7 @@
           (k v)←{3 11::⍵ v ⋄ (,v[⍵])((v[])~(v[⍵]))}⍵⍵
           l←{2::⍬ ⋄ (,⍵).label}k
           (kv vv)←{0::{0::⍵ ⋄ (,⍵).values}⍵ ⋄ ⍵[].values}¨k v
-          vv←kv,∘⍺⍺⌸⍥(↑[⎕IO])vv
+          vv←⊃⍪/⊂⍤2⊢kv{⍺,⍤1⊢⍵}∘⍺⍺⌸⍥(↑[⎕IO])vv
           l←⍺{
               0::⎕SIGNAL 6 ⋄ 0=⎕NC'⍺':l,v.label
               (vl←⊃⌽⍴vv)=≢⍺:⍺ ⋄ vl=≢l,⍺:l,⍺ ⋄ l,v.label,⍺
