@@ -3,7 +3,7 @@
     ⍝ data science for Dyalog APL
     ⍝ PROOF-OF-CONCEPT jgl@dyalog.com 2024
 
-    debug←0
+    debug←1
 
     MAXLINES←45
     SHADE←3
@@ -72,7 +72,7 @@
           :If 'series'≡arg.Name
               ⎕SIGNAL(~∧/series∊⎕INSTANCES ##.Series)/11 ⍝ domain
               ⎕SIGNAL(1<≢∪⍴∘⌷¨series.values)/6           ⍝ value
-              I←series.label∘⍳{83≠⎕DR ⍵:⍺⍺⊂⍵ ⋄ ⍵}¨ ⍝ index function
+              I←series.label∘⍳ ⍝ index function
           :EndIf
           f←1(↑⍪'─'⍪↓)⍕labels⍪⍉' '@(0,2≡/⊢)⍤1⍉'·'@(≡∘⍬¨)default[;]
           f←SHADE{0=⍺:⍵ ⋄ ↑'░'@(=∘' ')¨@((0=⍺|2-⍨⍳≢⍵)⍨)↓⍵}f
@@ -210,16 +210,16 @@
               l frame y,r c⍴f[;a.label]
           }
           ⍺←⊢ ⋄ v←frame⍣(~(⊂⍵)∊⎕INSTANCES Frame)⊢⍵
-          (k v)←{3 11::⍵ v ⋄ (,v[⍵])((v[])~(v[⍵]))}⍵⍵
+          (k v)←{3 11::⍵ v ⋄ (,v[⍵])(v[]~⊢v[⍵])}⍵⍵
           3≠⎕NC'⍺⍺':⍺(⍺⍺ unstack ⍵⍵)⍵
           l←{2::⍬ ⋄ (,⍵).label}k
           (kv vv)←{0::{0::⍵ ⋄ (,⍵).values}⍵ ⋄ ⍵[].values}¨k v
-          vv←⊃⍪/⊂⍤2⊢kv{⍺,⍤1⊢⍵}∘⍺⍺⌸⍥(↑[⎕IO])vv
+          vv←⊃⍪/⊂⍤2⊢kv,⍤1∘⍺⍺⌸⍥(↑[⎕IO])vv
           l←⍺{
               0::⎕SIGNAL 6 ⋄ 0=⎕NC'⍺':l,v.label
               (vl←⊃⌽⍴vv)=≢⍺:⍺ ⋄ vl=≢l,⍺:l,⍺ ⋄ l,v.label,⍺
           }v
-          ⍋sort l frame vv
+          f[;(⊃⌽⍴kv)↑l]⍋sort(f←l frame vv)
       }
 
     ⍝ join frames or data arrays in a frame
