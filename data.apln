@@ -3,7 +3,7 @@
     ⍝ data science for Dyalog APL
     ⍝ PROOF-OF-CONCEPT jgl@dyalog.com 2024
 
-    debug←1
+    debug←0
 
     MAXLINES←45
     SHADE←3
@@ -25,8 +25,7 @@
         ∇
 
         ⍝ format in a column with its label as header
-        ⍝ repeated consecutive elements are replaced by a dot
-        ⍝ also perform checks
+        ⍝ also check values rank and update frames
         ∇ setseries;f
           :Implements Trigger label,values
           ⎕SIGNAL(1<≢⍴values)/4 ⍝ rank
