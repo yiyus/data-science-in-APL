@@ -209,8 +209,8 @@
               l frame y,r c⍴f[;a.label]
           }
           ⍺←⊢ ⋄ v←frame⍣(~(⊂⍵)∊⎕INSTANCES Frame)⊢⍵
+          3≠⎕NC'⍺⍺':⍺(⍺⍺ unstack ⍵⍵)v
           (k v)←{3 11::⍵ v ⋄ (,v[⍵])(v[]~⊢v[⍵])}⍵⍵
-          3≠⎕NC'⍺⍺':⍺(⍺⍺ unstack ⍵⍵)⍵
           l←{2::⍬ ⋄ (,⍵).label}k
           (kv vv)←{0::{0::⍵ ⋄ (,⍵).values}⍵ ⋄ ⍵[].values}¨k v
           vv←⊃⍪/⊂⍤2⊢kv,⍤1∘⍺⍺⌸⍥(↑[⎕IO])vv
@@ -226,7 +226,7 @@
           ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           ww←⍵⍵{⍺←⊢ ⋄ 3≠⎕NC'⍺⍺':⍺⍺ ⋄ ⍺ ⍺⍺ ⍵}⍥{⍵.labels}
           0=⎕NC'⍺':(ww f)series ⍺⍺(f←frame ⍵).values
-          (a w)←frame¨⍺ ⍵ ⋄ al←a.labels~l←a ww w
+          (a w)←frame¨⍺ ⍵ ⋄ l←a ww w ⋄ al←l~⍵.labels
           f←frame a[al],⍣(≢al)⊢w[l∩⍵.labels]
           frame ⍺⍺{
               ~(⊂l←⊂⍵.label)∧.∊(f a w).labels:⍵
