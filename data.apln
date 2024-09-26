@@ -71,8 +71,8 @@
           :If 'series'≡arg.Name
               ⎕SIGNAL(~∧/series∊⎕INSTANCES ##.Series)/11 ⍝ domain
               ⎕SIGNAL(1<≢∪⍴∘⌷¨series.values)/6           ⍝ value
-              I←series.label∘⍳ ⍝ index function
           :EndIf
+          I←series.label∘⍳ ⍝ index function
           f←1(↑⍪'─'⍪↓)⍕labels⍪⍉' '@(0,2≡/⊢)⍤1⍉'·'@(≡∘⍬¨)default[;]
           f←SHADE{0=⍺:⍵ ⋄ ↑'░'@(=∘' ')¨@((0=⍺|2-⍨⍳≢⍵)⍨)↓⍵}f
           ⎕DF MAXLINES{↑(⊂'…',⍕n-2),⍨⍣(n>⍺)↓(⍺⌊n←≢⍵)↑⍵}⍣(MAXLINES>0)⊢f
@@ -111,10 +111,10 @@
         gets←{~⊃⌽ais⍵:series ⋄ series[ai⍵]}
         sets←{~⊃⌽ais⍵:series⊢←⍵.NewValue ⋄ series[ai⍵]←⍵.NewValue}
         aiv←{I⊃⍵.Indexers} ⋄ av←{↑[⎕IO]⍣(0<≢⍴⍺)⊢⍵}
-        getv←{~⊃ais⍵:⍺av⍺.values ⋄ ⍺av⍺{⍺.values[⍵]}¨⊂aiv⍵}
+        getv←{~⊃ais⍵:⍺av⍺.values ⋄ ⍺av⍺{⍺.values[⍵]}¨1↑⍵.Indexers}
           setv←{
-              v←{↓[⎕IO]⍣(0<≢⍴⍵)⊢⍵}⍵.NewValue
-              ~⊃ais ⍵:⍺.values←v ⋄ ⍺((aiv ⍵){⍺.values[⍺⍺]←⍵})¨v
+              ~⊃ais ⍵:⍺.values←{↓[⎕IO]⍣(0<≢⍴⍵)⊢⍵}⍵.NewValue
+              ⍺((⊃⍵.Indexers){⍺.values[⍺⍺]←⍵})¨{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}⍵.NewValue
           }
 
         :Property labels ⍝ ←→ df[].label
@@ -150,10 +150,13 @@
           l←{0::⍵ ⋄ ⍵.label}l
           s←⎕NEW Series(l v)
       :ElseIf 2=≢⍴v
-          v←↑series¨↓v
-          v←{∨/2≢/⍵.label:⎕SIGNAL 6 ⋄ ⍵}¨↓[⎕IO]v
-          l←(⊃¨v).label ⋄ v←{⊃,/⍵[].values}¨v
-          s←l{⎕NEW Series(⍺ ⍵)}¨v
+          s←{
+            2::⍺,⍵
+            2::⎕NEW Series(⍺.label(⍺.values,⍵))
+            2::⎕NEW Series(⍵.label(⍺,⍵.values))
+            ⍺.label≢⍵.label:⎕SIGNAL 6
+            ⎕NEW Series(⍺.label(⍺.values,⍵.values))
+          }⌿v
       :Else
           v←⊃,/{2 6::⍵ ⋄ ⍵.series[]}¨v
           ⎕SIGNAL(~∧/v∊⎕INSTANCES Series)/6 ⍝ value

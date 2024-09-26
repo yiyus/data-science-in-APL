@@ -1,0 +1,44 @@
+r←series;t
+t←⎕NS⍬
+t.data←#.data
+t.series←{
+    s←⍺ data.series ⍵
+    s2←data.series s
+    ##.assert 2≡/⍵ s.values s2.values:
+    ##.assert 2≡/⍺ s.label s2.label:
+    s
+}
+t.series_array←{
+    s←data.series⍺⍪⍉⍪⍵
+    ##.assert s.values≡¨⍺,¨⍵.values:
+    s←data.series⍵⍪⍉⍪⍺
+    ##.assert s.values≡¨⍵.values,¨⍺:
+    s
+}
+t.series_series←{
+    s←data.series⍵⍪⍉⍪⍺
+    ##.assert s.label≡⍺.label:
+    ##.assert s.label≡⍵.label:
+    ##.assert s.values≡⍵.values,¨⍺.values:
+    s
+}
+t.bracket←{
+    ##.assert ⍵.values≡⍵[]:
+    ##.assert ⍵.values[⍺]≡⍵[⍺]:
+    ⍵
+}
+t.setlabel←{
+    ⍵.label←⍺
+    ##.assert ⍺≡⍵.label:
+    ⍵
+}
+t.setvalue←{
+    s←⍵
+    s[⍺]←*v←s[⍺]
+    ##.assert ⍵.values[⍺]≡*v:
+    s
+}
+r←0
+r←t.(2 setvalue(⊂'another')setlabel 2 bracket 'one'series ⍳5)
+r←t.(('one' '2'series¨(15 25)(35 45))series_series(10 20)(30 40)series_array'one' '2'series¨(⍳5)(2×⍳5))
+r←1

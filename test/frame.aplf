@@ -1,0 +1,30 @@
+r←frame;t
+t←⎕NS⍬
+t.data←#.data
+t.frame←{
+    f←⍺ data.frame ⍵
+    f2←data.frame f
+    ##.assert 2≡/(↑[1]⍵)f.values f2.values:
+    ##.assert 2≡/⍺ f.labels f2.labels:
+    f
+}
+t.bracket←{
+    ##.assert ⍵.series≡⍵[]:
+    ##.assert ⍵.values≡⍵[;]:
+    ⍵
+}
+t.setlabels←{
+    ⍵.labels←⍺
+    ##.assert ⍺≡⍵[].label:
+    ⍵
+}
+t.setvalue←{
+    f←⍵
+    f[⊃⍺;⊃⌽⍺]←*v←(f[⊃⍺;⊃⌽⍺])
+    ##.assert (↑[1]⍵[⊃⌽⍺].(values[⊃⍺]))≡*v:
+    f
+}
+r←0
+r←t.(f←(l←'other' 'another')setlabels bracket'one' '2'frame(⍳5)(2×⍳5))
+r←t.((2 4)l setvalue 3 l setvalue(2 4)(1↑l)setvalue 3(1↑l)setvalue f)
+r←1

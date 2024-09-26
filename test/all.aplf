@@ -1,0 +1,2 @@
+all
+⎕SIGNAL(~∧/series frame)/6
