@@ -1,0 +1,22 @@
+ r←sort;t
+ t←⎕NS ⍬
+ t.data←#.data
+ t.series←{
+     s←⍋data.sort ⍵
+     ##.assert(↑[1]s[].values)≡(⊂∘⍋⌷⊢)↑[1]⍵.values:
+     s←⍺⍋data.sort ⍵
+     ##.assert(↑[1]s.values)≡((⊂⍋⍺.values)⌷⊢)↑[1]⍵.values:
+     s
+ }
+ t.frame←{
+     s←⍋data.sort ⍵
+     ##.assert s.values≡(⊂∘⍋⌷⊢)⍵.values:
+     s←⍺⍋data.sort ⍵
+     ##.assert s.values≡((⊂⍋⍵{2::↑[⎕IO]⍺[⍵].values ⋄ ⍵.values}⍺)⌷⊢)⍵.values:
+     s
+ }
+ r←0
+ r←t.(('key'data.series'adcb')series'one' 'two'data.series¨'cabd'(⍳4))
+ r←t.(('key'data.series'adcb')frame'one' 'two'data.frame'cabd'(⍳4))
+ r←t.((⊂'one')frame'one' 'two'data.frame'cabd'(⍳4))
+ r←1

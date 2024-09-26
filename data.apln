@@ -1,5 +1,4 @@
 :Namespace data
-
     ⍝ data science for Dyalog APL
     ⍝ PROOF-OF-CONCEPT jgl@dyalog.com 2024
 
@@ -151,11 +150,11 @@
           s←⎕NEW Series(l v)
       :ElseIf 2=≢⍴v
           s←{
-            2::⍺,⍵
-            2::⎕NEW Series(⍺.label(⍺.values,⍵))
-            2::⎕NEW Series(⍵.label(⍺,⍵.values))
-            ⍺.label≢⍵.label:⎕SIGNAL 6
-            ⎕NEW Series(⍺.label(⍺.values,⍵.values))
+              2::⍺,⍵
+              2::⎕NEW Series(⍺.label(⍺.values,⍵))
+              2::⎕NEW Series(⍵.label(⍺,⍵.values))
+              ⍺.label≢⍵.label:⎕SIGNAL 6
+              ⎕NEW Series(⍺.label(⍺.values,⍵.values))
           }⌿v
       :Else
           v←⊃,/{2 6::⍵ ⋄ ⍵.series[]}¨v
@@ -193,9 +192,10 @@
       sort←{
           ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           ⍺←⍵ ⋄ a←⍺{0::⍺ ⋄ ⍵[⍺]}⍵
-          a←{4::{2::⍵ ⋄ ⍵.values}⍵ ⋄ ⍵[;]}a
-          a←(⊂⍺⍺ a)⌷[⎕IO]{4::⍵[] ⋄ ⍵[;]}⍵
-          a{2::⍵ ⋄ 6::⍵.label series ⍺ ⋄ ⍵.labels frame ⍺}⍵
+          ⍝ TODO: mix is not needed to sort series
+          a←{4::{2::⍵ ⋄ ↑[⎕IO]⍵.values}⍵ ⋄ ⍵[;]}a
+          a←(⊂⍺⍺ a)⌷[⎕IO]{4::{2::⍵ ⋄ ↑[⎕IO]⍵.values}⍵ ⋄ ⍵[;]}⍵
+          a{2::⍵ ⋄ 6::⍵.label series¨↓[⎕IO]⍺ ⋄ ⍵.labels frame ⍺}⍵
       }
 
     ⍝ group by right operand and apply left operand
