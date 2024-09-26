@@ -11,6 +11,8 @@ t.frame←{
 t.bracket←{
     ##.assert ⍵.series≡⍵[]:
     ##.assert ⍵.values≡⍵[;]:
+    ##.assert ⍺≡⍵[⍺].label:
+    ##.assert ⍵[⍺].values≡↓[1]⍵[;⍺]:
     ⍵
 }
 t.setlabels←{
@@ -25,6 +27,6 @@ t.setvalue←{
     f
 }
 r←0
-r←t.(f←(l←'other' 'another')setlabels bracket'one' '2'frame(⍳5)(2×⍳5))
+r←t.(f←(l←'other' 'another')setlabels'2' 'one'bracket'one' '2'frame(⍳5)(2×⍳5))
 r←t.((2 4)l setvalue 3 l setvalue(2 4)(1↑l)setvalue 3(1↑l)setvalue f)
 r←1

@@ -39,6 +39,6 @@ t.setvalue←{
     s
 }
 r←0
-r←t.(2 setvalue(⊂'another')setlabel 2 bracket 'one'series ⍳5)
+r←t.(3 4 setvalue 2 setvalue(⊂'another')setlabel 2 bracket 'one'series ⍳5)
 r←t.(('one' '2'series¨(15 25)(35 45))series_series(10 20)(30 40)series_array'one' '2'series¨(⍳5)(2×⍳5))
 r←1
