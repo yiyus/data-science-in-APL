@@ -109,11 +109,11 @@
         ais←{⍵.IndexersSpecified} ⋄ ai←{I⊃⌽⍵.Indexers}
         gets←{~⊃⌽ais⍵:series ⋄ series[ai⍵]}
         sets←{~⊃⌽ais⍵:series⊢←⍵.NewValue ⋄ series[ai⍵]←⍵.NewValue}
-        aiv←{I⊃⍵.Indexers} ⋄ av←{↑[⎕IO]⍣(0<≢⍴⍺)⊢⍵}
+        av←{↑[⎕IO]⍣(0<≢⍴⍺)⊢⍵} ⋄ va←{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}
         getv←{~⊃ais⍵:⍺av⍺.values ⋄ ⍺av⍺{⍺.values[⍵]}¨1↑⍵.Indexers}
           setv←{
               ~⊃ais ⍵:⍺.values←{↓[⎕IO]⍣(0<≢⍴⍵)⊢⍵}⍵.NewValue
-              ⍺((⊃⍵.Indexers){⍺.values[⍺⍺]←⍵})¨{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}⍵.NewValue
+              ⍺((⊃⍵.Indexers){⍺.values[⍺⍺]←⍵})¨va⍵.NewValue
           }
 
         :Property labels ⍝ ←→ df[].label
