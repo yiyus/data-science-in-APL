@@ -1,2 +1,2 @@
-all
-⎕SIGNAL(~∧/by sort frame series)/6
+ all
+ ⎕SIGNAL(~∧/join by sort frame series)/6

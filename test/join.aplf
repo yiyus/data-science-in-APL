@@ -1,0 +1,26 @@
+ r←join;t
+ t←⎕NS ⍬
+ t.data←#.data
+ t.monadic←{
+     s←(⍺⍺ data.join ⍵⍵)⍵
+     ##.assert s.label≡⍵⍵ ⍵.labels:
+     ##.assert s.values≡⍺⍺ ⍵.values:
+     ⍵
+ }
+ t.dyadic←{
+     r←⍺(⍺⍺ data.join ⍵⍵)⍵
+     ##.assert r.labels≡⍺.labels ⍵⍵ ⍵.labels:
+     a←r.labels~⍵.labels
+     w←r.labels~⍺.labels
+     i←⍺.labels∩⍵.labels
+     ##.assert r[a].values≡⍺[a].values:
+     ##.assert r[w].values≡⍵[w].values:
+     ##.assert r[i].values≡⍺[i].values ⍺⍺ ⍵[i].values:
+     ⍵
+ }
+ t.(f←'one' 'two' 'three'data.frame'aaaabbbb'(0 1 0 1 0 1 0 1)(⍳8))
+ t.(g←'two' 'three' 'four'data.frame(2×⍳8)(10×⍳8)(100×⍳8))
+ r←0
+ r←t.((⊂'value')⍨⍤1 monadic('label'⍨)⊣/monadic(⊢/),/monadic(,/)f)
+ r←t.(f-dyadic⊣f-dyadic⊢f-dyadic∩f-dyadic∪g)
+ r←1
