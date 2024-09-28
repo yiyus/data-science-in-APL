@@ -4,8 +4,9 @@ t.data←#.data
 t.frame←{
     f←⍺ data.frame ⍵
     f2←data.frame f
-    ##.assert 2≡/(↑[1]⍵)f.values f2.values:
-    ##.assert 2≡/⍺ f.labels f2.labels:
+    f3←⍺ data.frame↑[1]⍵
+    ##.assert 2≡/(↑[1]⍵)f.values f2.values f3.values:
+    ##.assert 2≡/⍺ f.labels f2.labels f3.labels:
     f
 }
 t.bracket←{

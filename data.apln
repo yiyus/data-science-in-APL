@@ -203,23 +203,29 @@
           ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           unstack←{
               s←⍵[]~a b←⍺⍺ ⍵⍵{0::⍺ ⋄ ⍵[⊂⍺]}¨⊂⍵
-              r←≢y←∪↑[⎕IO]s.values
               c←≢x←{⍵[⍋⍵]}∪b.values
+              r←≢y←{⍵[⍋⍵;]}∪↑[⎕IO]s.values
               f←frame s,b a
               f←f frame((↑,y∘.,⊂¨x),⍤1⊢⍬⍨¨a)⍪f.values
-              f←f.labels,⌿by(f[(s,b).label])⊢f[a.label]
+              f←{,⌿⍵}by(f[(b,s).label])⊢f[⊂a.label]
               ⍺←⊢ ⋄ l←{0::⍵ ⋄ ⍵[].label}⍺⊣s.label,x
-              l frame y,r c⍴f[;a.label]
+              l frame y,⍉c r⍴f[;⊂a.label]
+          }
+          stack←{
+              0=⎕NC'⍺':⍺⍺ unstack ⍵⍵⊢⍵
+              s←⍵[]~a←⍺{0::⍺ ⋄ ⍵[⍺]}⍵
+              v←⊃⍪/(⊂¨a.label),¨(⊂↑[⎕IO]s.values),¨a.values
+              ((⊂⍵⍵),s.label,⊂⍺⍺)frame↑⊃,/,¨/v
           }
           ⍺←⊢ ⋄ v←frame⍣(~(⊂⍵)∊⎕INSTANCES Frame)⊢⍵
-          3≠⎕NC'⍺⍺':⍺(⍺⍺ unstack ⍵⍵)v
+          3≠⎕NC'⍺⍺':⍺(⍺⍺ stack ⍵⍵)v
           (k v)←{3 11::⍵ v ⋄ (,v[⍵])(v[]~⊢v[⍵])}⍵⍵
           l←{2::⍬ ⋄ (,⍵).label}k
           (kv vv)←{0::{0::⍵ ⋄ (,⍵).values}⍵ ⋄ ⍵[].values}¨k v
           vv←⊃⍪/⊂⍤2⊢kv,⍤1∘⍺⍺⌸⍥(↑[⎕IO])vv
           l←⍺{
-              0::⎕SIGNAL 6 ⋄ 0=⎕NC'⍺':l,v.label
-              (vl←⊃⌽⍴vv)=≢⍺:⍺ ⋄ vl=≢l,⍺:l,⍺ ⋄ l,v.label,⍺
+              0::⎕SIGNAL 6 ⋄ 0=⎕NC'⍺':l,⍵[].label
+              (vl←⊃⌽⍴vv)=≢⍺:⍺ ⋄ vl=≢l,⍺:l,⍺ ⋄ l,⍵.label,⍺
           }v
           f[;(⊃⌽⍴kv)↑l]⍋sort(f←l frame vv)
       }
