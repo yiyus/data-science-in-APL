@@ -27,7 +27,15 @@ t.setvalue←{
     ##.assert (↑[1]⍵[⊃⌽⍺].(values[⊃⍺]))≡*v:
     f
 }
+t.csv←{
+    f←⍵ data.frame ⍺ ⍝ write
+    g←data.frame ⍺   ⍝ read
+    ##.assert f≡⍥{⍵.(labels values)}g:
+    ##.assert ⎕NDELETE ⍺:
+    ⍵
+}
 r←0
 r←t.(f←(l←'other' 'another')setlabels'2' 'one'bracket'one' '2'frame(⍳5)(2×⍳5))
 r←t.((2 4)l setvalue 3 l setvalue(2 4)(1↑l)setvalue 3(1↑l)setvalue f)
+r←t.(('test_frame.csv')csv f)
 r←1

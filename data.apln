@@ -167,14 +167,15 @@
     ∇ f←{l}frame v;⎕TRAP
       ⎕TRAP←(~⎕THIS.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
       :If 0≠⎕NC'l'
+          f←⍬
           v←l{
               80≠⎕DR ⍵:↓[⎕IO]⍣(2=≢⍴⍵)⊢⍵
               b←⍺{∧/(⊃∘⊃∘⎕CLASS¨⍺)∊Series Frame}⍣(⊃9=⎕NC'⍺')⊢0
               ~b:⎕CSV⍠2⊢v'' 4 0
-              lv←⍺[].values(⍺[].label)
-              _←⍵⊣f⊢←lv ⎕CSV⍠2⍠'IfExists' 'Replace'⊢⍵
+              _←⍺[].values(⍺[].label)⎕CSV⍠2⍠'IfExists' 'Replace'⊢⍵
+              ⊢f⊢←⍺
           }v
-          :If 0=⎕NC'f'
+          :If 0∊⍴f
               f←({0::⍵ ⋄ ⍵[].label}l){⎕NEW Series(⍺ ⍵)}¨v
               f←⎕NEW Frame f
               v←{0::⍬ ⋄ ⍵.(SHADE MAXLINES)←l.(SHADE MAXLINES)}f
