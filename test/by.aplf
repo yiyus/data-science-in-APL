@@ -24,7 +24,8 @@
      u←⍺⍺ data.by ⍺⊢⍵
      l←u.labels~⍵.labels
      f←(⊂⍺⍺)⍋data.sort l(⍺⍺ data.by ⍺)u
-     ##.assert f≡⍥{⍵.(labels values)}⍵:
+     ##.assert f≡⍥{⍵.labels}⍵:
+     ##.assert f≡⍥{∊(⍋data.sort⍵)[;⊂'three']}⍵:
      g←(⊂⍺⍺)⍋data.sort u[l](⍺⍺ data.by ⍺)u[u.labels~l]
      ##.assert f≡⍥{⍵.(labels values)}g:
      v←⍺⍺ data.by(⍵[⊂⍺])⊢⍵[⍵.labels~⊂⍺]

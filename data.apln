@@ -2,7 +2,7 @@
     ⍝ data science for Dyalog APL
     ⍝ PROOF-OF-CONCEPT jgl@dyalog.com 2024
 
-    debug←0
+    debug←1
 
     MAXLINES←45
     SHADE←3
@@ -25,9 +25,18 @@
 
         ⍝ format in a column with its label as header
         ⍝ also check values rank and update frames
-        ∇ setseries;f
+        ∇ setseries arg;f;⎕TRAP
           :Implements Trigger label,values
+          ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           ⎕SIGNAL(1<≢⍴values)/4 ⍝ rank
+          :If 'values'≡arg.Name
+          :AndIf values≢arg.OldValue
+              :If 0<≢values
+                  I←values∘⍳
+              :Else
+                  I←{⎕SIGNAL 3}
+              :EndIf
+          :EndIf
           ⎕DF ¯1↓[⎕IO+1]⍕1(↑⍪'─'⍪↓)⍕(⊂,label)⍪⍪,values
           ⍝ update frames referencing this series
           :For f :In ⎕INSTANCES Frame
@@ -36,8 +45,8 @@
         ∇
 
         ⍝ bracket indexing return values
-        :Property Default default
-        :Access Private
+        :Property Default iloc
+        :Access Public
             ∇ r←get
               r←values
             ∇
@@ -46,13 +55,30 @@
             ∇
         :EndProperty
 
+        ⍝ bracket indexing return or substitute index of
+        :Property Keyed loc
+        :Access Public
+            ∇ r←get arg;⎕TRAP
+              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+              ⎕SIGNAL(1<≢arg.Indexers)/4 ⍝ rank
+              r←I⊃arg.Indexers
+            ∇
+            ∇ set arg;⎕TRAP
+              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+              ⎕SIGNAL(1<≢arg.Indexers)/4 ⍝ rank
+              values[I⊃arg.Indexers]←arg.NewValue
+            ∇
+        :EndProperty
+
     :EndClass ⍝ Series
 
     :Class Frame ⍝ list of series of the same length
 
         :Field Public series←0⍴⎕NEW Series
+        :Field Public index←0⍴⊂''
         :Field Public MAXLINES←##.MAXLINES
         :Field Public SHADE←##.SHADE
+        IDX←⊢
 
         ∇ Make1 a
           :Access Public
@@ -63,7 +89,7 @@
         ∇
 
         ⍝ set index function I and frame of each series
-        ∇ setframe arg;f;⎕TRAP
+        ∇ setframe arg;⎕TRAP
           :Implements Trigger series,SHADE,MAXLINES
           :Access Private
           ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
@@ -71,23 +97,47 @@
               ⎕SIGNAL(~∧/series∊⎕INSTANCES ##.Series)/11 ⍝ domain
               ⎕SIGNAL(1<≢∪⍴∘⌷¨series.values)/6           ⍝ value
           :EndIf
-          I←series.label∘⍳ ⍝ index function
-          f←1(↑⍪'─'⍪↓)⍕labels⍪⍉' '@(0,2≡/⊢)⍤1⍉'·'@(≡∘⍬¨)default[;]
-          f←SHADE{0=⍺:⍵ ⋄ ↑'░'@(=∘' ')¨@((0=⍺|2-⍨⍳≢⍵)⍨)↓⍵}f
-          ⎕DF MAXLINES{↑(⊂'…',⍕n-2),⍨⍣(n>⍺)↓(⍺⌊n←≢⍵)↑⍵}⍣(MAXLINES>0)⊢f
+          I←series.label∘⍳ ⍝ index
+          :If index≢i←index∩series.label
+              index←i
+          :EndIf
+          ⎕DF index{
+              ⍝ TODO: only MAXLINES instead of removing at the end
+              DF←{
+                  0=≢⍵:'' ⋄ l←⍵.label
+                  d←1(↑⍪'─'⍪↓)⍕l⍪⍉' '@(0,2≡/⊢)⍤1⍉'·'@(≡∘⍬¨)loc[;l]
+                  SHADE{0=⍺:⍵ ⋄ ↑'░'@(=∘' ')¨@((0=⍺|2-⍨⍳≢⍵)⍨)↓⍵}d
+              }
+              ML←MAXLINES∘{⍺>0:↑(⊂'…',⍕n-2),⍨⍣(n>⍺)↓(⍺⌊n←≢⍵)↑⍵ ⋄ ⍵}
+              0<≢⍺:ML(DF loc[,⍺]),⍤1⊢'│',DF ⍵~loc[,⍺] ⋄ ML DF ⍵
+          }series
         ∇
 
-        ⍝ bracket indexing rank-1 [] to return series
-        ⍝ bracket indexing rank-2 [;] to return values
-        :Property Keyed Default default
-        :Access Private
+        ⍝ set index function I and frame of each series
+        ∇ setindex arg;i;⎕TRAP
+          :Implements Trigger index
+          :Access Private
+          ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+          ⎕SIGNAL(1<≢⍴index)/4             ⍝ rank
+          ⎕SIGNAL(~∧/index∊series.label)/6 ⍝ value
+          i←indices ⋄ IDX←i∘⍳⍣(~0∊⍴i)
+          series{⍺[I ⍵]∪⍺}←index ⍝ reorder
+        ∇
+
+        ⍝ TODO: rank-2loc and iloc should get only the required
+        ⍝ values instead of indexing/assigning to values array
+
+        ⍝ rank-1 indexing [labels] to return series
+        ⍝ rank-2 indexing [indices;labels] to return values
+        :Property Keyed Default loc
+        :Access Public
             ∇ r←get arg;⎕TRAP
               ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
               :Select ≢arg.Indexers
               :Case 1
-                  r←gets arg
+                  r←arg I I1 series
               :Case 2
-                  r←(gets arg)getv arg
+                  r←arg IDX I2 I values
               :Else
                   ⎕SIGNAL 4
               :EndSelect
@@ -96,25 +146,85 @@
               ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
               :Select ≢arg.Indexers
               :Case 1
-                  sets arg
+                  series←arg I S1 series
               :Case 2
-                  (gets arg)setv arg
+                  values←arg IDX S2 I values
               :Else
                   ⎕SIGNAL 4
               :EndSelect
             ∇
         :EndProperty
 
-        ⍝ helper fns to get/set series and values
-        ais←{⍵.IndexersSpecified} ⋄ ai←{I⊃⌽⍵.Indexers}
-        gets←{~⊃⌽ais⍵:series ⋄ series[ai⍵]}
-        sets←{~⊃⌽ais⍵:series⊢←⍵.NewValue ⋄ series[ai⍵]←⍵.NewValue}
-        av←{↑[⎕IO]⍣(0<≢⍴⍺)⊢⍵} ⋄ va←{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}
-        getv←{~⊃ais⍵:⍺av⍺.values ⋄ ⍺av⍺{⍺.values[⍵]}¨1↑⍵.Indexers}
-          setv←{
-              ~⊃ais ⍵:⍺.values←{↓[⎕IO]⍣(0<≢⍴⍵)⊢⍵}⍵.NewValue
-              ⍺((⊃⍵.Indexers){⍺.values[⍺⍺]←⍵})¨va⍵.NewValue
+        ⍝ rank-1 indexing [⍳≢labels] to return series
+        ⍝ rank-2 indexing [⍳≢indices;⍳≢labels] to return values
+        :Property Keyed iloc
+        :Access Public
+            ∇ r←get arg;⎕TRAP
+              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+              :Select ≢arg.Indexers
+              :Case 1
+                  r←arg⊢I1 series
+              :Case 2
+                  r←arg⊢I2⊢values
+              :Else
+                  ⎕SIGNAL 4
+              :EndSelect
+            ∇
+            ∇ set arg;⎕TRAP
+              ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+              :Select ≢arg.Indexers
+              :Case 1
+                  series←arg⊢S1 series
+              :Case 2
+                  values←arg⊢S2⊢values
+              :Else
+                  ⎕SIGNAL 4
+              :EndSelect
+            ∇
+        :EndProperty
+
+        ⍝ helper fns to get/set arrays from PropertyArguments
+        AI←{⍵.Indexers} ⋄ AS←{⍵.IndexersSpecified}
+        I1←{⊃AS⍺:⍵[⍺⍺⊃AI⍺] ⋄ ⍵}
+          I2←{
+              (i j)←AI ⍺ ⋄ (s t)←AS ⍺
+              s∧t:⍵[⍺⍺ i;⍵⍵ j] ⋄ s:⍵[⍺⍺ i;] ⋄ t:⍵[;⍵⍵ j] ⋄ ⍵
           }
+        S1←{w←⍵ ⋄ ⊃AS⍺:w⊣w[⍺⍺⊃AI⍺]←⍺.NewValue ⋄ ⍺.NewValue}
+          S2←{
+              (i j)←AI ⍺ ⋄ (s t)←AS ⍺ ⋄ w←⍵ ⋄ v←⍺.NewValue
+              s∧t:w⊣w[⍺⍺ i;⍵⍵ j]←v ⋄ s:w⊣w[⍺⍺ i;]←v ⋄ t:w⊣w[;⍵⍵ j]←v ⋄ v
+          }
+
+      ⍝ return columns w with index a (default none)
+        ∇ r←{a}Col w;⎕TRAP
+          :Access Public
+          ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+          a←{0=⎕NC'a':0⍴⍵ ⋄ 0::a ⋄ loc[a]}index
+          r←a ##.index{0::⍵ ⋄ loc[⍵]}w
+          r.(MAXLINES SHADE)←MAXLINES SHADE
+        ∇
+
+      ⍝ return selection w using index a (default index)
+      ⍝ with w series, select a (default all) and add index
+        ∇ r←{a}Sel w;⎕TRAP
+          :Access Public
+          ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+          :If ∧/w∊⊃,/⎕INSTANCES¨Series Frame
+              r←{0=⎕NC'a':⍵ ⋄ ⍵.Sel a}loc[index]##.index w
+              :Return
+          :EndIf
+          r←{0=⎕NC'a':⍵ ⋄ a ##.index ⍵}⎕THIS
+          r←r.labels ##.frame r[,w;]
+          r.(index MAXLINES SHADE)←index MAXLINES SHADE
+        ∇
+
+      ⍝ Loc ←→ Sel∘Col
+        ∇ r←{a}Loc w;⎕TRAP
+          :Access Public
+          ⎕TRAP←(~##.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+          r←{0=⎕NC'a':Sel ⍵ ⋄ a Sel ⍵}Col w
+        ∇
 
         :Property labels ⍝ ←→ df[].label
         :Access Public
@@ -133,6 +243,28 @@
             ∇
             ∇ set arg
               series[].values←{↓[⎕IO]⍣(1<≢⍴⍵)⊢⍵}arg.NewValue
+            ∇
+        :EndProperty
+
+        :Property columns ⍝ ←→ df[].(label~index)
+        :Access Public
+            ∇ r←get
+              r←series[].label~index
+            ∇
+            ∇ set arg
+              ((≢index)↓series[]).label←arg.NewValue
+            ∇
+        :EndProperty
+
+        :Property indices ⍝ ←→ ↓⍉↑df[df.index].values
+        :Access Public
+            ∇ r←get
+              r←I index
+              r←r{1<≢⍺:↓⍉↑⍵ ⋄ ⊃⍵}series[r].values
+            ∇
+            ∇ set arg;i
+              i←I index
+              series[i].values←i{1<≢⍺:↓⍉↑⍵ ⋄ ,⊂⍵}arg.NewValue
             ∇
         :EndProperty
 
@@ -157,46 +289,83 @@
               ⎕NEW Series(⍺.label(⍺.values,⍵.values))
           }⌿v
       :Else
-          v←⊃,/{2 6::⍵ ⋄ ⍵.series[]}¨v
-          ⎕SIGNAL(~∧/v∊⎕INSTANCES Series)/6 ⍝ value
-          s←{⎕NEW Series ⍵.(label values)}¨v
+          v←⊃,/{2 6::,⍵ ⋄ ⍵.series[]}¨v
+          :If ~∧/v∊⎕INSTANCES Series
+              s←⎕NEW Series(''v)
+          :Else
+              s←⊃,/{⎕NEW Series ⍵.(label values)}¨v
+          :EndIf
       :EndIf
     ∇
 
     ⍝ return frame from input to series or csv filename
     ∇ f←{l}frame v;⎕TRAP
       ⎕TRAP←(~⎕THIS.debug)/⊂0 'C' '⎕SIGNAL⎕EN'
-      :If 0≠⎕NC'l'
-          f←⍬
-          v←l{
-              80≠⎕DR ⍵:↓[⎕IO]⍣(2=≢⍴⍵)⊢⍵
-              b←⍺{∧/(⊃∘⊃∘⎕CLASS¨⍺)∊Series Frame}⍣(⊃9=⎕NC'⍺')⊢0
-              ~b:⎕CSV⍠2⊢v'' 4 0
-              _←⍺[].values(⍺[].label)⎕CSV⍠2⍠'IfExists' 'Replace'⊢⍵
-              ⊢f⊢←⍺
-          }v
-          :If 0∊⍴f
-              f←({0::⍵ ⋄ ⍵[].label}l){⎕NEW Series(⍺ ⍵)}¨v
-              f←⎕NEW Frame f
-              v←{0::⍬ ⋄ ⍵.(SHADE MAXLINES)←l.(SHADE MAXLINES)}f
-          :EndIf
-      :Else
-          v←{
+      :If 0=⎕NC'l'
+          f←⎕NEW Frame({
               80≠⎕DR ⍵:series ⍵
               {(v l)←⍵ ⋄ l{⎕NEW Series(⍺ ⍵)}¨v}⎕CSV⍠2⊢⍵'' 4 1
-          }v
-          f←⎕NEW Frame v
+          }v)
+          :If 1=≢v
+          :AndIf v∊⎕INSTANCES Frame
+              f.index←v.index
+          :EndIf
+          :Return
       :EndIf
+      f←⍬
+      v←l{
+          80≠⎕DR ⍵:{0::↓[⎕IO]⍣(2=≢⍴⍵)⊢⍵ ⋄ ⍵[].values}⍵
+          b←⍺{∧/(⊃∘⊃∘⎕CLASS¨⍺)∊Series Frame}⍣(⊃9=⎕NC'⍺')⊢0
+          ~b:⎕CSV⍠2⊢v'' 4 0
+          _←⍺[].values(⍺[].label)⎕CSV⍠2⍠'IfExists' 'Replace'⊢⍵
+          ⊢f⊢←⍺
+      }v
+      :If ~0∊⍴f
+          :Return
+      :EndIf
+      f←⎕NEW Frame(({
+          2<≢⍴⍵:⎕SIGNAL 4 ⍝ rank
+          (1<≢⍵)∧2=≢⍴⍵:⎕SIGNAL 5 ⍝ length
+          0::(,⍵) ⋄ ⍵[].label
+      }l){⎕NEW Series(⍺(,⍵))}¨v)
+      v←{
+          0::⍬ ⋄ ⍵.(SHADE MAXLINES)←l.(SHADE MAXLINES)
+          ⍵.index←l.index ⋄ ⍵
+      }f
     ∇
+
+    ⍝ get frame with index ⍺ (default none)
+      index←{
+          ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN' ⋄ ⍺←0⍴⊂''
+          f←⍺⊣join∪⍣(∧/⍺∊⊃,/⎕INSTANCES¨Series Frame)⍣(0<≢⍺)frame ⍵
+          f.index←{0::⍵ ⋄ 0::(,⍵).label ⋄ ⍵.labels}⍺
+          {0::f ⋄ f.(MAXLINES SHADE)←⍵.(MAXLINES SHADE) ⋄ f}⍵
+      }
+
+    ⍝ identify non-a-number values (monadic) or
+    ⍝ replace non-a-number values with ⍺
+      nan←{
+          ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN' ⋄ ⍺←⊢
+          (⊂⍵)∊⎕INSTANCES Series:⍵.label series ⍺ ∇ ⍵.values
+          (⊂⍵)∊⎕INSTANCES Frame:⍵ frame ⍺∘∇¨⍵.series.values
+          3=⎕NC'⍺':0=2|⎕DR¨⍵ ⋄ ⍺@∇ ⍵
+      }
+
+    ⍝ apply left operand to values at right operand
+      at←{
+          ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN' ⋄ ⍺←⊢
+          (⊂⍵)∊⎕INSTANCES Series:⍵.label series ⍺(⍺⍺@⍵⍵)⍵.values
+          ⍵ frame ⍺∘⍺⍺{⍵.label series ⍺⍺⊣⍵[]}¨@(l⍳⍵⍵⊣l←⍵[].label)⊢⍵[]
+      }
 
     ⍝ sort right argument by left argument
       sort←{
           ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
           ⍺←⍵ ⋄ a←⍺{0::⍺ ⋄ ⍵[⍺]}⍵
           ⍝ TODO: mix is not needed to sort series
-          a←{4::{2::⍵ ⋄ ↑[⎕IO]⍵.values}⍵ ⋄ ⍵[;]}a
-          a←(⊂⍺⍺ a)⌷[⎕IO]{4::{2::⍵ ⋄ ↑[⎕IO]⍵.values}⍵ ⋄ ⍵[;]}⍵
-          a{2::⍵ ⋄ 6::⍵.label series¨↓[⎕IO]⍺ ⋄ ⍵.labels frame ⍺}⍵
+          a←{0::⍵ ⋄ 0::⍵.values ⋄ 0::↑[⎕IO]⍵[].values ⋄ ⍵[;]}a
+          a←(⊂⍺⍺ a)⌷[⎕IO]{0::⍵ ⋄ 0::↑[⎕IO]⍵.values ⋄ ⍵[;]}⍵
+          a{2::⍵ ⋄ 6::⍵.label series¨↓[⎕IO]⍺ ⋄ (⍵⊣⍵.labels)frame ⍺}⍵
       }
 
     ⍝ group by right operand and apply left operand
@@ -207,22 +376,22 @@
               c←≢x←{⍵[⍋⍵]}∪b.values
               r←≢y←{⍵[⍋⍵;]}∪↑[⎕IO]s.values
               f←frame s,b a
-              f←f frame((↑,y∘.,⊂¨x),⍤1⊢⍬⍨¨a)⍪f.values
+              f←f frame((⊃⍪/(⊂y),∘⊂¨x),⍤1⊢⍬⍨¨a)⍪f.values
               f←{,⌿⍵}by(f[(b,s).label])⊢f[⊂a.label]
               ⍺←⊢ ⋄ l←{0::⍵ ⋄ ⍵[].label}⍺⊣s.label,x
               l frame y,⍉c r⍴f[;⊂a.label]
           }
           stack←{
               0=⎕NC'⍺':⍺⍺ unstack ⍵⍵⊢⍵
-              s←⍵[]~a←⍺{0::⍺ ⋄ ⍵[⍺]}⍵
-              v←⊃⍪/(⊂¨a.label),¨(⊂↑[⎕IO]s.values),¨a.values
-              ((⊂⍵⍵),s.label,⊂⍺⍺)frame↑⊃,/,¨/v
+              s←⍵[]~a←,⍺{0::⍺ ⋄ ⍵[⍺]}⍵
+              v←⊃⍪/a.(⊂label),⍤0 1¨(⊂↑[⎕IO]s.values),⍤1 0¨a.values
+              ((⊂⍵⍵),s.label,⊂⍺⍺)frame v ⍝↑⊃,/,¨/v
           }
           ⍺←⊢ ⋄ v←frame⍣(~(⊂⍵)∊⎕INSTANCES Frame)⊢⍵
           3≠⎕NC'⍺⍺':⍺(⍺⍺ stack ⍵⍵)v
           (k v)←{3 11::⍵ v ⋄ (,v[⍵])(v[]~⊢v[⍵])}⍵⍵
           l←{2::⍬ ⋄ (,⍵).label}k
-          (kv vv)←{0::{0::⍵ ⋄ (,⍵).values}⍵ ⋄ ⍵[].values}¨k v
+          (kv vv)←{0::⍵ ⋄ 0::(,⍵).values ⋄ ⍵[].values}¨k v
           vv←⊃⍪/⊂⍤2⊢kv,⍤1∘⍺⍺⌸⍥(↑[⎕IO])vv
           l←⍺{
               0::⎕SIGNAL 6 ⋄ 0=⎕NC'⍺':l,⍵[].label
@@ -234,14 +403,29 @@
     ⍝ join frames or data arrays in a frame
       join←{
           ⎕TRAP←(~debug)/⊂0 'C' '⎕SIGNAL⎕EN'
+          0=⎕NC'⍺':{
+              ~∧/⍵∊⊃,/⎕INSTANCES¨Series Frame:⎕SIGNAL 6
+              ⊃∇/⍵
+          }⍵
+          (a w)←frame¨⍺ ⍵
+          3≠⎕NC'⍺⍺':⍵⍵{
+              l←a∩⍥{⍵.labels}w ⋄ k←a ⍺⍺¨⍥{⍵[l].values}w
+              (ia iw)←{⍵[l].values⍳⍥(↑[⎕IO])k}¨a w
+              la←a.labels~l ⋄ lw←w.labels~l
+              i←l∩a,⍥{0::⍬ ⋄ ⍵.index}w
+              a←((↑[⎕IO]a[la].values)⍪(≢la)↑⍵)[ia;]
+              w←((↑[⎕IO]w[lw].values)⍪(-≢lw)↑⍵)[iw;]
+              f←(l,la,lw)frame(⊃,/⍪¨k),a,w ⋄ f.index←i ⋄ f
+          }⍺⍺
           ww←⍵⍵{⍺←⊢ ⋄ 3≠⎕NC'⍺⍺':⍺⍺ ⋄ ⍺ ⍺⍺ ⍵}⍥{⍵.labels}
-          0=⎕NC'⍺':(ww f)series ⍺⍺(f←frame ⍵).values
-          (a w)←frame¨⍺ ⍵ ⋄ l←a ww w ⋄ al←l~⍵.labels
-          f←frame a[al],⍣(≢al)⊢w[l∩⍵.labels]
-          frame ⍺⍺{
+          l←a ww w ⋄ al←l~w.labels
+          f←frame a[al],⍣(0<≢al)⊢w[l∩w.labels]
+          f←frame ⍺⍺{
               ~(⊂l←⊂⍵.label)∧.∊(f a w).labels:⍵
               ⍵.label series a[;l]⍺⍺ ⍵[]
           }¨f[]
+          f.index←f.labels∩a,⍥{0::⍬ ⋄ ⍵.index}w
+          f
       }
 
 :EndNamespace

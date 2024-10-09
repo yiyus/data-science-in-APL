@@ -1,2 +1,4 @@
- all
- ⎕SIGNAL(~∧/join by sort frame series)/6
+all
+⍝ ⎕SIGNAL(~∧/nan index frame series)/6
+⍝ ⎕SIGNAL(~∧/join by sort at)/6
+⎕SIGNAL(~∧/join by sort frame series)/6
