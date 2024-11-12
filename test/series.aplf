@@ -3,9 +3,11 @@ t←⎕NS⍬
 t.data←#.data
 t.series←{
     s←⍺ data.series ⍵
+    s1←data.series ⍵
     s2←data.series s
-    ##.assert 2≡/⍵ s.values s2.values:
-    ##.assert 2≡/⍺ s.label s2.label:
+    ##.assert 2≡/(⊂⍵),(s s1 s2).values:
+    ##.assert 2≡/(⊂⍺),(s s2).label:
+    ##.assert ''≡s1.label:
     s
 }
 t.series_array←{

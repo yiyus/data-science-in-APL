@@ -11,30 +11,27 @@
      r←+⌿data.by ⍺⊢⍵
      s←'abc'+⌿data.by ⍺⊢⍵
      ##.assert r≡⍥{⍵.values}s:
-     ##.assert s.labels≡'abc':
+     ##.assert s.(index columns).label≡'ab'(,'c'):
      s←(⊂'other')+⌿data.by ⍺⊢⍵
      ##.assert r≡⍥{⍵.values}s:
-     ##.assert s.labels≡⍺,⊂'other':
+     ##.assert s.(index columns).label≡⍺(,⊂'other'):
      s←(⊂'other')+⌿data.by(⍵[⍺])⊢⍵[⍵.labels~⍺]
      ##.assert r≡⍥{⍵.values}s:
-     ##.assert s.labels≡⍺,⊂'other':
+     ##.assert s.(index columns).label≡⍺(,⊂'other'):
      ⍵
  }
  t.stack←{
      u←⍺⍺ data.by ⍺⊢⍵
      l←u.labels~⍵.labels
-     f←(⊂⍺⍺)⍋data.sort l(⍺⍺ data.by ⍺)u
-     ##.assert f≡⍥{⍵.labels}⍵:
-     ##.assert f≡⍥{∊(⍋data.sort⍵)[;⊂'three']}⍵:
-     g←(⊂⍺⍺)⍋data.sort u[l](⍺⍺ data.by ⍺)u[u.labels~l]
+     f←(⊂⍺)⍋data.sort l(⍺⍺ data.by ⍺)u
+     ##.assert f≡⍥{⍵.(labels values)}(⊂'one')data.frame ⍵:
+     g←(⊂⍺)data.(⍋sort∘frame)u[l](⍺⍺ data.by ⍺)u[u.series.label~l]
      ##.assert f≡⍥{⍵.(labels values)}g:
      v←⍺⍺ data.by(⍵[⊂⍺])⊢⍵[⍵.labels~⊂⍺]
      ##.assert u≡⍥{⍵.(labels values)}v:
      ⍵
  }
  r←0
- r←t.('one' 'two'monadic(⊂'one')monadic f←'one' 'two' 'three'data.frame'aaaabbbb'(0 1 0 1 0 1 0 1)(⍳8))
- r←t.('one' 'two'dyadic f)
- r←t.('one'('three'stack)f1←{⍵ data.frame ¯1↓1↓⍵.values}'one'('three'stack)f)
- r←t.('one'('three'stack)f1⊣f1[⊂'two'].values←6⍴⍳3)
+ r←t.('one' 'two'monadic(⊂'one')monadic f←'one' 'two' 'three'data.frame'aaabbb'(0 1 2 0 1 2)(⍳6))
+ r←t.('one'('three'stack)'one' 'two'dyadic f)
  r←1
